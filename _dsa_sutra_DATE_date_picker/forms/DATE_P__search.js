@@ -415,6 +415,7 @@ switch (globals.DATE_date_range_type) {
 /**
  *
  * @properties={typeid:24,uuid:"6a5aff07-19a9-439a-99bf-3204526ced04"}
+ * @AllowToRunInFind
  */
 function ACTION_search()
 {
@@ -488,7 +489,7 @@ else {
 	
 	if (!count) {
 	
-		plugins.dialogs.showInfoDialog(
+		globals.DIALOGS.showInfoDialog(
 			"Feedback",
 			"No records found. Previous foundset restored.",
 			"OK")
@@ -792,5 +793,8 @@ elements.date_start.format = formatDate
 elements.date_end.format = formatDate
 
 ACTION_range_set()
+
+//custom form setup for iOS FiD
+globals.CODE_form_in_dialog_setup_ipad()
 
 }

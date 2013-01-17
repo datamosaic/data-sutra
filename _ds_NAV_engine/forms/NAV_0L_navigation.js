@@ -1,4 +1,11 @@
 /**
+ * @type {Boolean}
+ *
+ * @properties={typeid:35,uuid:"81B52C5F-4536-4BBB-97B6-AC2165900E7D",variableType:-4}
+ */
+var _configSet = false;
+
+/**
  *
  * @properties={typeid:24,uuid:"7c7a54d9-6406-4aaa-a7bf-bc1a2fd25920"}
  */
@@ -31,8 +38,10 @@ function ACTIONS_list()
 
 //get menu list from a value list
 var valueList = [
-		'Rename navigation set',
-		'Duplicate navigation set',
+		'Rename workspace',
+		'Duplicate workspace',
+		'-',
+		'Set web client path',
 		'-',
 		'Delete record'
 	] //,'Export framework settings','Import framework settings','-'
@@ -99,6 +108,7 @@ else {
 /**
  *
  * @properties={typeid:24,uuid:"2892a60a-fb20-42f6-b3df-d58ea49b352e"}
+ * @AllowToRunInFind
  */
 function ACTIONS_list_control()
 {
@@ -126,7 +136,7 @@ function ACTIONS_list_control()
 
 switch (arguments[0]) {
 	case 0: //change name
-		var navName = plugins.dialogs.showInputDialog('Change navigation set name', 'Enter new name:', nav_name)
+		var navName = globals.DIALOGS.showInputDialog('Change navigation set name', 'Enter new name:', nav_name)
 		if (navName) {
 			nav_name = navName
 			databaseManager.saveData()
@@ -134,7 +144,7 @@ switch (arguments[0]) {
 		break
 
 	case 1:	//dupe nav set
-		var newNav = plugins.dialogs.showInputDialog('Duplicate set','What do you want the new navigation set to be called?')
+		var newNav = globals.DIALOGS.showInputDialog('Duplicate set','What do you want the new navigation set to be called?')
 		
 		if (newNav) {
 			//turn on progress bar
@@ -290,8 +300,16 @@ switch (arguments[0]) {
 		IMPORT_engine()
 		break
 	
-	case 3:	//delete record
-		var delRec = plugins.dialogs.showWarningDialog('Delete set','Do you really want to delete this navigation set?','Yes','No')
+	case 3: //change path name
+		var urlPath = globals.DIALOGS.showInputDialog('Change navigation set path', 'Enter new path:', url_path || '')
+		if (urlPath) {
+			url_path = urlPath
+			databaseManager.saveData()
+		}
+		break
+		
+	case 5:	//delete record
+		var delRec = globals.DIALOGS.showWarningDialog('Delete set','Do you really want to delete this navigation set?','Yes','No')
 		var defaultDisplay = false
 		
 		if (delRec == 'Yes') {
@@ -343,7 +361,7 @@ var formName = 'NAV_0L_navigation_1L'
 //if max index, exit (no more records of same node-level below
 var recordLast = forms[formName].foundset.getRecord(forms[formName].foundset.getSize())
 if (forms[formName].order_by == recordLast.order_by) {
-	plugins.dialogs.showErrorDialog('Error','This record is at the bottom of the list.  It cannot move any lower')
+	globals.DIALOGS.showErrorDialog('Error','This record is at the bottom of the list.  It cannot move any lower')
 	return
 }
 
@@ -394,7 +412,7 @@ var formName = 'NAV_0L_navigation_1L'
 //if index = 1, exit (no more records of same node-level above)
 var recordFirst = forms[formName].foundset.getRecord(1)
 if (forms[formName].order_by == recordFirst.order_by) {
-	plugins.dialogs.showErrorDialog('Error','This record is at the top of the list.  It cannot move any higher')
+	globals.DIALOGS.showErrorDialog('Error','This record is at the top of the list.  It cannot move any higher')
 	return
 }
 
@@ -423,6 +441,7 @@ forms[formName].foundset.selectRecord(pkRecSelect)
 /**
  *
  * @properties={typeid:24,uuid:"7a9041c0-4bfb-49d2-b20f-d382f4b0665a"}
+ * @AllowToRunInFind
  */
 function EXPORT_engine()
 {
@@ -595,12 +614,12 @@ if (accessControl || blog || navEngine || reportRegistry || solConfig || toolbar
 	sizeArea = 95 / numAreas
 	
 	//prompt for file where to save
-	plugins.dialogs.showInfoDialog('Save export file','Choose a location to save the exported frameworks settings','OK')
+	globals.DIALOGS.showInfoDialog('Save export file','Choose a location to save the exported frameworks settings','OK')
 	var zipFileName = plugins.file.showFileSaveDialog('_FW_settings.mosaic')
 	
 	//check to see if zipFileName already exists, if it does throw up error
 	if (zipFileName && zipFileName.exists()) {
-		var fileGood = plugins.dialogs.showWarningDialog('File exists','Replace existing file?','Yes','No')
+		var fileGood = globals.DIALOGS.showWarningDialog('File exists','Replace existing file?','Yes','No')
 	}
 	else if (zipFileName) {
 		var fileGood = 'Yes'
@@ -1831,14 +1850,14 @@ if (accessControl || blog || navEngine || reportRegistry || solConfig || toolbar
 		}
 		//no sets
 		else {
-		//	plugins.dialogs.showErrorDialog('No export','No navigation sets were selected for export')
+		//	globals.DIALOGS.showErrorDialog('No export','No navigation sets were selected for export')
 			
 			//advance progressbar updater to the next section
 			currentArea += 9
 		}
 		
 	//TODO: numbers not adding up here
-		//plugins.dialogs.showInfoDialog('Hello','This is the value' + globals.TRIGGER_progressbar_get()[0])
+		//globals.DIALOGS.showInfoDialog('Hello','This is the value' + globals.TRIGGER_progressbar_get()[0])
 		
 		//Reports node
 		//
@@ -1849,7 +1868,7 @@ if (accessControl || blog || navEngine || reportRegistry || solConfig || toolbar
 			var endPosn = sizeArea * currentArea
 			
 	//TODO: numbers not adding up here
-		//plugins.dialogs.showInfoDialog('Hello','This is the value' + startPosn + ', ' + endPosn)
+		//globals.DIALOGS.showInfoDialog('Hello','This is the value' + startPosn + ', ' + endPosn)
 			
 			//update with what doing
 			globals.TRIGGER_progressbar_set(startPosn + (startPosn / endPosn) / 2,'Adding report registry...')
@@ -2156,19 +2175,19 @@ if (accessControl || blog || navEngine || reportRegistry || solConfig || toolbar
 			XML_zip([XmlMF],zipFileName)
 			
 			globals.TRIGGER_progressbar_set(100,'Export complete')
-			plugins.dialogs.showInfoDialog('Export complete','Selected frameworks settings have been successfully exported')
+			globals.DIALOGS.showInfoDialog('Export complete','Selected frameworks settings have been successfully exported')
 		}
 		else {
-			plugins.dialogs.showErrorDialog('No export','Error writing export file')
+			globals.DIALOGS.showErrorDialog('No export','Error writing export file')
 		}
 	}
 	//no file
 	else if (!fileGood) {
-		plugins.dialogs.showErrorDialog('No export','No name given for the exported file')
+		globals.DIALOGS.showErrorDialog('No export','No name given for the exported file')
 	}
 }
 else {
-	plugins.dialogs.showErrorDialog('No export','Nothing selected to export')
+	globals.DIALOGS.showErrorDialog('No export','Nothing selected to export')
 }
 
 globals.TRIGGER_progressbar_stop()
@@ -2195,6 +2214,7 @@ childElem.appendChild(exportXML.createTextNode("Child 1"))
 /**
  *
  * @properties={typeid:24,uuid:"fb27a700-d029-4fe5-9d70-99d65822859d"}
+ * @AllowToRunInFind
  */
 function EXPORT_engine__archive()
 {
@@ -2354,12 +2374,12 @@ if (accessControl || blog || navEngine || reportRegistry || solConfig || toolbar
 	sizeArea = 95 / numAreas
 	
 	//prompt for file where to save
-	plugins.dialogs.showInfoDialog('Save export file','Choose a location to save the exported frameworks settings','OK')
+	globals.DIALOGS.showInfoDialog('Save export file','Choose a location to save the exported frameworks settings','OK')
 	var zipFileName = plugins.file.showFileSaveDialog('_FW_settings.mosaic')
 	
 	//check to see if zipFileName already exists, if it does throw up error
 	if (zipFileName && zipFileName.exists()) {
-		var fileGood = plugins.dialogs.showWarningDialog('File exists','Replace existing file?','Yes','No')
+		var fileGood = globals.DIALOGS.showWarningDialog('File exists','Replace existing file?','Yes','No')
 	}
 	else if (zipFileName) {
 		var fileGood = 'Yes'
@@ -3590,14 +3610,14 @@ if (accessControl || blog || navEngine || reportRegistry || solConfig || toolbar
 		}
 		//no sets
 		else {
-		//	plugins.dialogs.showErrorDialog('No export','No navigation sets were selected for export')
+		//	globals.DIALOGS.showErrorDialog('No export','No navigation sets were selected for export')
 			
 			//advance progressbar updater to the next section
 			currentArea += 9
 		}
 		
 	//TODO: numbers not adding up here
-		//plugins.dialogs.showInfoDialog('Hello','This is the value' + globals.TRIGGER_progressbar_get()[0])
+		//globals.DIALOGS.showInfoDialog('Hello','This is the value' + globals.TRIGGER_progressbar_get()[0])
 		
 		//Reports node
 		//
@@ -3608,7 +3628,7 @@ if (accessControl || blog || navEngine || reportRegistry || solConfig || toolbar
 			var endPosn = sizeArea * currentArea
 			
 	//TODO: numbers not adding up here
-		//plugins.dialogs.showInfoDialog('Hello','This is the value' + startPosn + ', ' + endPosn)
+		//globals.DIALOGS.showInfoDialog('Hello','This is the value' + startPosn + ', ' + endPosn)
 			
 			//update with what doing
 			globals.TRIGGER_progressbar_set(startPosn + (startPosn / endPosn) / 2,'Adding report registry...')
@@ -3915,19 +3935,19 @@ if (accessControl || blog || navEngine || reportRegistry || solConfig || toolbar
 			XML_zip([XmlMF],zipFileName)
 			
 			globals.TRIGGER_progressbar_set(100,'Export complete')
-			plugins.dialogs.showInfoDialog('Export complete','Selected frameworks settings have been successfully exported')
+			globals.DIALOGS.showInfoDialog('Export complete','Selected frameworks settings have been successfully exported')
 		}
 		else {
-			plugins.dialogs.showErrorDialog('No export','Error writing export file')
+			globals.DIALOGS.showErrorDialog('No export','Error writing export file')
 		}
 	}
 	//no file
 	else if (!fileGood) {
-		plugins.dialogs.showErrorDialog('No export','No name given for the exported file')
+		globals.DIALOGS.showErrorDialog('No export','No name given for the exported file')
 	}
 }
 else {
-	plugins.dialogs.showErrorDialog('No export','Nothing selected to export')
+	globals.DIALOGS.showErrorDialog('No export','Nothing selected to export')
 }
 
 globals.TRIGGER_progressbar_stop()
@@ -3957,6 +3977,7 @@ childElem.appendChild(exportXML.createTextNode("Child 1"))
  * @param {JSEvent} event the event that triggered the action
  *
  * @properties={typeid:24,uuid:"2eac4e12-5271-42db-81bb-19a480c72455"}
+ * @AllowToRunInFind
  */
 function FORM_on_load(event)
 {
@@ -4045,7 +4066,7 @@ if (typeof forms.NAV_0L_navigation_1L.order_by == 'number') {
 }
 else {
 	forms.NAV_0L_navigation_1L.elements.fld_order_by.visible = true
-	plugins.dialogs.showInfoDialog('Set order by','You must set the default sort order for navigation sets.\nNote: this is only used when A/C is disabled.','OK')
+	globals.DIALOGS.showInfoDialog('Set order by','You must set the default sort order for navigation sets.\nNote: this is only used when A/C is disabled.','OK')
 }
 
 if (utils.hasRecords(foundset)) {
@@ -4061,6 +4082,7 @@ globals.TRIGGER_tooltip_set()
 /**
  *
  * @properties={typeid:24,uuid:"0cf435a6-a0ac-41f5-abce-448fa4535795"}
+ * @AllowToRunInFind
  */
 function IMPORT_engine()
 {
@@ -4116,11 +4138,11 @@ var numAreaSize
 var numItemSize
 globals.TRIGGER_progressbar_start(0,'Importing...')
 
-plugins.dialogs.showInfoDialog('Choose import','Choose the file containing the frameworks settings you wish to import','OK')
+globals.DIALOGS.showInfoDialog('Choose import','Choose the file containing the frameworks settings you wish to import','OK')
 var importFile = plugins.file.showFileOpenDialog(1,null,false)
 
 if (importFile) {
-	var input = plugins.dialogs.showInfoDialog('Full import','Warning! This is import will overwrite all of your current data. Continue?','Yes','No')
+	var input = globals.DIALOGS.showInfoDialog('Full import','Warning! This is import will overwrite all of your current data. Continue?','Yes','No')
 	
 	if (input == 'Yes') {
 		//progress updater
@@ -5001,7 +5023,7 @@ if (importFile) {
 					//advance progressbar updater to the next section
 					currentArea += 9
 					
-				//	plugins.dialogs.showErrorDialog('No import','No navigation sets were selected for import')
+				//	globals.DIALOGS.showErrorDialog('No import','No navigation sets were selected for import')
 				}
 			}
 			
@@ -5262,12 +5284,12 @@ if (importFile) {
 				currentArea++
 			}
 			
-			plugins.dialogs.showInfoDialog('Import success','You have imported the frameworks settings')
+			globals.DIALOGS.showInfoDialog('Import success','You have imported the frameworks settings')
 		}
 	}
 }
 else {
-	plugins.dialogs.showErrorDialog('No import','No file selected for import')
+	globals.DIALOGS.showErrorDialog('No import','No file selected for import')
 }
 
 
@@ -5278,6 +5300,7 @@ globals.TRIGGER_progressbar_stop()
 /**
  *
  * @properties={typeid:24,uuid:"bc6ff2d5-ee0e-468f-b10e-04224dcc03c6"}
+ * @AllowToRunInFind
  */
 function IMPORT_engine__ver2()
 {
@@ -5321,7 +5344,7 @@ var numItemSize
 //var progressBean = forms.DEV_0F_solution__import_export.elements.bean_progress
 globals.TRIGGER_progressbar_start(0,'Importing...')
 
-plugins.dialogs.showInfoDialog('Choose import','Choose the file containing the navigation sets you wish to import','OK')
+globals.DIALOGS.showInfoDialog('Choose import','Choose the file containing the navigation sets you wish to import','OK')
 var importFile = plugins.file.showFileOpenDialog(1,null,false)
 
 if (importFile) {
@@ -5411,7 +5434,7 @@ if (importFile) {
 			for (var b = 0; b < navSetsExisting.length && !found; b++) {
 				if (navSetsExisting[b] == navEngine[importNavSets[h]].name) {
 					found = true
-					var newName = plugins.dialogs.showInputDialog('Rename navigation set','A navigation set named ' + navSetsExisting[b] + ' already exists.  Please rename',navSetsExisting[b])
+					var newName = globals.DIALOGS.showInputDialog('Rename navigation set','A navigation set named ' + navSetsExisting[b] + ' already exists.  Please rename',navSetsExisting[b])
 				}
 			}
 			
@@ -5681,15 +5704,15 @@ if (importFile) {
 		}
 		globals.TRIGGER_progressbar_set(100)
 		
-		plugins.dialogs.showInfoDialog('Import complete','Selected navigation sets have been successfully imported')
+		globals.DIALOGS.showInfoDialog('Import complete','Selected navigation sets have been successfully imported')
 		FORM_on_load(true)
 	}
 	else {
-		plugins.dialogs.showErrorDialog('No import','No navigation sets were selected for import')
+		globals.DIALOGS.showErrorDialog('No import','No navigation sets were selected for import')
 	}
 }
 else {
-	plugins.dialogs.showErrorDialog('No import','No file selected for import')
+	globals.DIALOGS.showErrorDialog('No import','No file selected for import')
 }
 
 
@@ -5700,6 +5723,7 @@ globals.TRIGGER_progressbar_stop()
 /**
  *
  * @properties={typeid:24,uuid:"1c00a228-a974-4bd6-8d0b-1e93e4416005"}
+ * @AllowToRunInFind
  */
 function IMPORT_engine__ver3()
 {
@@ -5755,11 +5779,11 @@ var numAreaSize
 var numItemSize
 globals.TRIGGER_progressbar_start(0,'Importing...')
 
-plugins.dialogs.showInfoDialog('Choose import','Choose the file containing the frameworks settings you wish to import','OK')
+globals.DIALOGS.showInfoDialog('Choose import','Choose the file containing the frameworks settings you wish to import','OK')
 var importFile = plugins.file.showFileOpenDialog(1,null,false)
 
 if (importFile) {
-	var input = plugins.dialogs.showInfoDialog('Full import','Warning! This is import will overwrite all of your current data. Continue?','Yes','No')
+	var input = globals.DIALOGS.showInfoDialog('Full import','Warning! This is import will overwrite all of your current data. Continue?','Yes','No')
 	
 	if (input == 'Yes') {
 		//progress updater
@@ -6640,7 +6664,7 @@ if (importFile) {
 					//advance progressbar updater to the next section
 					currentArea += 9
 					
-				//	plugins.dialogs.showErrorDialog('No import','No navigation sets were selected for import')
+				//	globals.DIALOGS.showErrorDialog('No import','No navigation sets were selected for import')
 				}
 			}
 			
@@ -6901,12 +6925,12 @@ if (importFile) {
 				currentArea++
 			}
 			
-			plugins.dialogs.showInfoDialog('Import success','You have imported the frameworks settings')
+			globals.DIALOGS.showInfoDialog('Import success','You have imported the frameworks settings')
 		}
 	}
 }
 else {
-	plugins.dialogs.showErrorDialog('No import','No file selected for import')
+	globals.DIALOGS.showErrorDialog('No import','No file selected for import')
 }
 
 
@@ -6938,7 +6962,7 @@ function REC_new()
  *			  	
  */	//MEMO: if config set is showing, the orderby numbering will get out of whack
 
-var navName = plugins.dialogs.showInputDialog('Navigation set name', 'Enter name for navigation set:')
+var navName = globals.DIALOGS.showInputDialog('Navigation set name', 'Enter name for navigation set:')
 if (navName) {
 	//create new navigation set record
 	controller.newRecord(false)
@@ -6960,6 +6984,7 @@ if (navName) {
  * @param {JSEvent} event the event that triggered the action
  *
  * @properties={typeid:24,uuid:"ff3c6d3f-f3a6-495d-9b4a-6132c7e05763"}
+ * @AllowToRunInFind
  */
 function TOGGLE_config_set(event)
 {
@@ -7013,6 +7038,7 @@ if (globals.CODE_key_pressed() == 2 || typeof forceShow == 'boolean') {
 	//show all records
 	if (forceShow || !foundIt) {
 		controller.loadAllRecords()
+		_configSet = true
 	}
 	//config record showing, hide
 	else {
@@ -7022,6 +7048,7 @@ if (globals.CODE_key_pressed() == 2 || typeof forceShow == 'boolean') {
 		controller.find()
 		flag_config = '0'
 		controller.search(false,false)
+		_configSet = false
 	}
 	
 	if (utils.hasRecords(foundset)) {
@@ -7533,4 +7560,15 @@ function zzimport()
 			//call to helper Function to create node
 				//recursion built in here
 			
+}
+
+/**
+ * Perform the element double-click action.
+ *
+ * @param {JSEvent} event the event that triggered the action
+ *
+ * @properties={typeid:24,uuid:"AAF5B554-C9E3-4244-875E-80105FB9171A"}
+ */
+function TOGGLE_config_set_web(event) {
+	TOGGLE_config_set(!_configSet)
 }

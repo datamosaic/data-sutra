@@ -96,16 +96,20 @@ function FORM_on_load()
  *			  	
  */
 
-//running in servoy < 4
-if (utils.stringToNumber(application.getVersion()) < 4 || utils.stringToNumber(application.getVersion()) >= 5) {
-	
-	var elem = globals.CODE_java_component(elements.fld_AC_login_password)
-	
-	elem.addKeyListener(new Packages.java.awt.event.KeyListener({keyPressed:CAPS_pressed}))
-	elem.addKeyListener(new Packages.java.awt.event.KeyListener({keyReleased:CAPS_pressed}))
-	
-}
+////running in servoy < 4
+//if (utils.stringToNumber(application.getVersion()) < 4 || utils.stringToNumber(application.getVersion()) >= 5) {
+//	
+//	var elem = globals.CODE_java_component(elements.fld_AC_login_password)
+//	
+//	elem.addKeyListener(new Packages.java.awt.event.KeyListener({keyPressed:CAPS_pressed}))
+//	elem.addKeyListener(new Packages.java.awt.event.KeyListener({keyReleased:CAPS_pressed}))
+//	
+//}
 
+if (!solutionPrefs.config.webClient) {
+	elements.fld_AC_login_user.visible = true
+	elements.fld_AC_login_password.visible = true
+}
 
 }
 
@@ -155,10 +159,15 @@ else {
 }
 
 /**
+ * @param {JSEvent} event the event that triggered the action
+ * @param {Function} alert Function that displays alert
  *
  * @properties={typeid:24,uuid:"72e21a43-7e05-4ab7-a8b7-c0d048fd9c8c"}
+ * @AllowToRunInFind
+ * 
+ * @return {Boolean} Success of login call
  */
-function LOGIN_user()
+function LOGIN_user(event,alert)
 {
 
 /*
@@ -180,32 +189,47 @@ function LOGIN_user()
  *			  	
  */
 
-if (!globals.AC_login_user && !globals.AC_login_password) {
-	plugins.dialogs.showErrorDialog(
-				"Invalid login", 
-				"You must enter a username and password to log in"
-			)
-	elements.fld_AC_login_user.requestFocus()
+function dialog(title,text) {
+	if (alert) {
+		alert(title,text)
+	}
+	else {
+		globals.DIALOGS.showErrorDialog(title,text)
+	}
 }
-else if (!globals.AC_login_user && globals.AC_login_password) {
-	plugins.dialogs.showErrorDialog(
-				"Empty user", 
-				"You must enter a username to log in"
-			)
-	elements.fld_AC_login_user.requestFocus()
+
+//called from this form
+if (event) {
+	if (!globals.AC_login_user && !globals.AC_login_password) {
+		dialog(
+			"Invalid login", 
+			"You must enter a username and password to log in"
+		)
+		elements.fld_AC_login_user.requestFocus()
+	}
+	else if (!globals.AC_login_user && globals.AC_login_password) {
+		dialog(
+			"Empty user", 
+			"You must enter a username to log in"
+		)
+		elements.fld_AC_login_user.requestFocus()
+	}
+	else if (globals.AC_login_user && !globals.AC_login_password) {
+		dialog(
+			"Empty password", 
+			"You must enter a password to log in"
+		)
+		elements.fld_AC_login_password.requestFocus()
+	}
 }
-else if (globals.AC_login_user && !globals.AC_login_password) {
-	plugins.dialogs.showErrorDialog(
-				"Empty password", 
-				"You must enter a password to log in"
-			)
-	elements.fld_AC_login_password.requestFocus()
-}
-else {
+
+// we have enough information to proceed
+if (globals.AC_login_user && globals.AC_login_password) {
 
 	var baseForm = solutionPrefs.config.formNameBase
-	var navigationList = 'NAV__navigation_tree'
-
+	var navigationList = (solutionPrefs.config.webClient) ? 'NAV__navigation_tree__WEB' : 'NAV__navigation_tree'
+	var navTabPanel = (solutionPrefs.config.webClient) ? forms.DATASUTRA_WEB_0F__list.elements.tab_list : forms[baseForm].elements.tab_content_A
+	
 	// // //
 	//		1. validate login
 	// // //
@@ -232,13 +256,13 @@ else {
 
 	//if not one record returned = login error
 	if (dataset.getMaxRowIndex() != 1) {
-		plugins.dialogs.showErrorDialog(
-				"Login error",
-				"Login doesn't exist"
-			)
+		dialog(
+			"Login error",
+			"Login doesn't exist"
+		)
 		globals.AC_login_password = null
 		elements.fld_AC_login_password.requestFocus()
-		return
+		return 'Login doesn\'t exist'
 	}
 
 	// // //
@@ -282,10 +306,10 @@ else {
 		fsUser.loadRecords(dataset.getValue(1,27))
 	}
 	catch (error) {
-		plugins.dialogs.showErrorDialog(
-					"Login error", 
-					"Your account is not fully setup"
-				)
+		dialog(
+			"Login error", 
+			"Your account is not fully setup"
+		)
 		return
 	} 
 
@@ -295,10 +319,10 @@ else {
 
 	//
 	if (accountDisabled) {
-		plugins.dialogs.showErrorDialog(
-					"Account disabled", 
-					"Your login has been disabled."
-				)
+		dialog(
+			"Account disabled", 
+			"Your login has been disabled."
+		)
 		return	
 	}	
 
@@ -322,15 +346,15 @@ else {
 
 		//password expired, quit
 		if (expire <= 0 && !expirationNever) {
-			plugins.dialogs.showErrorDialog(
-						"Login error", 
-						"Your login has expired. Please see administrator."
-					)
+			dialog(
+				"Login error", 
+				"Your login has expired. Please see administrator."
+			)
 			return		
 		}
-		//password will expire in a week, prompt to change
-		else if (expire < 7 && !expirationNever) {
-			var changePass = plugins.dialogs.showQuestionDialog(
+		//password will expire in a week, prompt to change (only smart client)
+		else if (expire < 7 && !expirationNever && !solutionPrefs.config.webClient) {
+			var changePass = globals.DIALOGS.showQuestionDialog(
 						'Password expiring',
 						'Your password will expire in '+expire+' days. Do you want to change it now?',
 						'Yes',
@@ -348,18 +372,18 @@ else {
 
 	//
 	if (changePassword) {
-		plugins.dialogs.showInfoDialog(
-					"Change password", 
-					"You must change your password."
-				)
+		dialog(
+			"Change password", 
+			"You must change your password."
+		)
 		forms.AC_P_password.FORM_fid(userID)
 
 		//password not changed
 		if (forms.AC_P_password.cancelled) {
-			plugins.dialogs.showErrorDialog(
-						"Login aborted", 
-						"You did not change your password.  Login will not continue."
-					)
+			dialog(
+				"Login aborted", 
+				"You did not change your password.  Login will not continue."
+			)
 			return
 		}
 		//reset requirement to change password at login
@@ -402,10 +426,10 @@ else {
 	}
 	//throw error
 	else {
-		plugins.dialogs.showErrorDialog(
-					"Login error",
-					"You are not a member of any group. Please see administrator."
-				)
+		dialog(
+			"Login error",
+			"You are not a member of any group. Please see administrator."
+		)
 		return
 	}
 
@@ -414,10 +438,10 @@ else {
 	}
 	//if no group selected, break
 	else {
-		plugins.dialogs.showErrorDialog(
-				"Login error", 
-				"You must choose a group in order to login"
-			)
+		dialog(
+			"Login error", 
+			"You must choose a group in order to login"
+		)
 		return
 	}
 
@@ -435,13 +459,12 @@ else {
 		var navSub = dataset.getValue(1,4)
 	}
 	catch (error) {
-		plugins.dialogs.showErrorDialog(
-					"Login error", 
-					"The group you are a member of has an error. Please see administrator."
-				)
+		dialog(
+			"Login error", 
+			"The group you are a member of has an error. Please see administrator."
+		)
 		return
 	} 
-
 
 	//TURN ON BUSY
 	globals.CODE_cursor_busy(true)
@@ -466,7 +489,7 @@ else {
 	var loggedHost = solutionPrefs.clientInfo.hostName
 	var loggedUserIP = (solutionPrefs.clientInfo.externalIP == 'UNDEFINED' || utils.stringPatternCount(solutionPrefs.clientInfo.externalIP,'Error') || solutionPrefs.clientInfo.externalIP == 'UNKNOWN') ? solutionPrefs.clientInfo.internalIP : solutionPrefs.clientInfo.externalIP
 
-	forms[baseForm + '__footer'].elements.lbl_status.text = ((loggedUser) ? 'USER: ' + loggedUser + '    ' : '') + 'LOGIN TIME: ' + loggedIn // + '    HOST: ' + loggedHost 
+	globals.DATASUTRA_log_status = ((loggedUser) ? 'USER: ' + loggedUser + '    ' : '') + 'LOGIN TIME: ' + loggedIn // + '    HOST: ' + loggedHost 
 	var lblStatus = '<html><head></head><body>' +
 					'USER: ' + loggedUser + '<br>' +
 					'HOST: ' + loggedHost + '<br>' +
@@ -571,13 +594,7 @@ else {
 	application.setUserProperty('sutra' + application.getServerURL().substr(7) + 'User',globals.AC_login_user)
 	application.setUserProperty('sutra' + application.getServerURL().substr(7) + 'Group',groupID)
 	application.setUserProperty('sutra' + application.getServerURL().substr(7) + 'Organization',organizationID)
-		
-	//reset wrapper bean 2 to show header
-	forms[baseForm].elements.bean_wrapper_2.topComponent = forms[baseForm].elements.bean_header
-	application.updateUI()
-	forms[baseForm].elements.bean_wrapper_2.dividerLocation = 44
-	
-	
+
 
 	// // //
 	//		5. load modes, toolbars, and logging prefs
@@ -1050,7 +1067,7 @@ else {
 				var vlReal = new Array()
 
 				//MEMO: this will only get the parent records of a cascading vl; this is ok because they use relations to work anyway
-				while (theRecord.valuelist_name == vlName && theRecord.relation_1 == vlRelation) {
+				while (theRecord && theRecord.valuelist_name == vlName && theRecord.relation_1 == vlRelation) {
 					vlReal.push((theRecord.saved) ? theRecord.saved : theRecord.visible)
 					vlDisplay.push(theRecord.visible)
 
@@ -1192,7 +1209,7 @@ else {
 		globals.TRIGGER_progressbar_stop()
 		globals.CODE_cursor_busy(false)
 
-		plugins.dialogs.showErrorDialog(
+		globals.DIALOGS.showErrorDialog(
 					"Login error", 
 					"The group you are a member of has an error. Please see administrator."
 				)
@@ -1250,7 +1267,7 @@ else {
 
 		//no default selected for group, choose the first non-config layout
 		if (!navSet) {
-			plugins.dialogs.showErrorDialog(
+			globals.DIALOGS.showErrorDialog(
 						'Error',
 						'No default navigation set defined\nReport to administrator'
 					)
@@ -1266,7 +1283,7 @@ else {
 		}
 	}
 	else {
-		plugins.dialogs.showErrorDialog(
+		globals.DIALOGS.showErrorDialog(
 					'Error',
 					'No navigation sets defined\nReport to administrator'
 				)
@@ -1276,7 +1293,7 @@ else {
 
 
 	//loop through all items in navPrefs and put each form in the main screen except for navigation preference items
-	if (solutionPrefs.config.prefs.formPreload) {
+	if (solutionPrefs.config.prefs.formPreload && !solutionPrefs.config.webClient) {
 		
 		//set flag that preload happening
 		solutionPrefs.config.prefs.formPreloading = true
@@ -1388,12 +1405,23 @@ else {
 		}
 
 		//load navigation list in
-		if (forms[baseForm].elements.tab_content_A.tabIndex > 0) {
-			forms[baseForm].elements.tab_content_A.removeAllTabs()
+		if (solutionPrefs.config.webClient) {
+			
+		}
+		else {
+			if (navTabPanel.tabIndex > 0) {
+				navTabPanel.removeAllTabs()
+			}
 		}
 
-		//use html based approach for navigation item navigation pane
-		forms[baseForm].elements.tab_content_A.addTab(forms[navigationList],'')
+		//use solution model based approach for navigation item navigation pane
+		if (solutionPrefs.config.webClient) {
+//			navTabPanel.setLeftForm(forms[navigationList])
+			forms.DATASUTRA_WEB_0F__list.FORM_on_show(true)
+		}
+		else {
+			navTabPanel.addTab(forms[navigationList],'')
+		}
 	}
 
 	// // //
@@ -1403,12 +1431,12 @@ else {
 	solutionPrefs.panel = globals.DS_panel_load(groupID)
 
 
-	if (solutionPrefs.config.prefs.formPreload) {
+	if (solutionPrefs.config.prefs.formPreload && !solutionPrefs.config.webClient) {
 		//we are using the transparent way
 		if (solutionPrefs.config.prefs.formPreloadGray) {
 			globals.TRIGGER_progressbar_set(null,'Finishing up...')
 		}
-
+		
 		globals.TRIGGER_interface_lock(false)
 		
 		//remove flag that preload happening
@@ -1420,11 +1448,11 @@ else {
 	// // //
 	/*
 	//load navigation list in
-	if (forms[baseForm].elements.tab_content_A.tabIndex > 0) {
-		forms[baseForm].elements.tab_content_A.removeTabAt(1)
+	if (navTabPanel.tabIndex > 0) {
+		navTabPanel.removeTabAt(1)
 	}
-	forms[baseForm].elements.tab_content_A.addTab(forms[listForm],'',null,null,null,null)
-	forms[baseForm].elements.tab_content_A.tabIndex = forms[baseForm].elements.tab_content_A.getMaxTabIndex()
+	navTabPanel.addTab(forms[listForm],'',null,null,null,null)
+	navTabPanel.tabIndex = navTabPanel.getMaxTabIndex()
 	*/
 
 	// // //
@@ -1533,25 +1561,18 @@ else {
 	//turn all disabled elements back on
 	solutionPrefs.config.helpMode = false
 	forms[baseForm + '__header'].elements.btn_navset.visible = true
-	forms[baseForm + '__header'].elements.btn_space_1.visible = true
-	forms[baseForm + '__header'].elements.btn_space_2.visible = true
-	forms[baseForm + '__header'].elements.btn_space_3.visible = true
-	forms[baseForm + '__header'].elements.btn_space_4.visible = true
-	forms[baseForm + '__header'].elements.btn_space_5.visible = true
-	forms[baseForm + '__header'].elements.btn_space_6.visible = true
-	forms[baseForm + '__header'].elements.btn_space_7.visible = true
-	forms[baseForm + '__header'].elements.btn_space_8.visible = false
-	forms[baseForm + '__header'].elements.btn_space_9.visible = false
-	forms[baseForm + '__header'].elements.btn_space_10.visible = false
-	forms[baseForm + '__header'].elements.btn_space_11.visible = false
-	forms[baseForm + '__header'].elements.btn_space_12.visible = false
-	forms[baseForm + '__header'].elements.btn_space_13.visible = false
-	forms[baseForm + '__header'].elements.btn_space_14.visible = false
+	for (var i = 1; i <= 14; i++) {
+		if (forms[baseForm + '__header'].elements['btn_space_' + i] != undefined) {
+			forms[baseForm + '__header'].elements['btn_space_' + i].visible = true
+		}
+	}
 	forms[baseForm + '__header'].elements.btn_space_dividers.visible = true
-	forms[baseForm + '__header__fastfind'].elements.btn_find.visible = true
-	forms[baseForm + '__header__fastfind'].elements.find_mid.visible = true
-	forms[baseForm + '__header__fastfind'].elements.find_end.visible = true
-	forms[baseForm + '__header__fastfind'].elements.fld_find.visible = true
+	if (!solutionPrefs.config.webClient) {
+		forms[baseForm + '__header__fastfind'].elements.btn_find.visible = true
+		forms[baseForm + '__header__fastfind'].elements.find_mid.visible = true
+		forms[baseForm + '__header__fastfind'].elements.find_end.visible = true
+		forms[baseForm + '__header__fastfind'].elements.fld_find.visible = true
+	}
 	forms[baseForm + '__header'].elements.btn_pref.visible = true
 	forms[baseForm + '__header'].elements.btn_fw_action.visible = true
 	forms[baseForm + '__footer'].elements.lbl_status.visible = true
@@ -1561,6 +1582,9 @@ else {
 	if (designMode) {
 		globals.DEV_mode_toggle()
 	}
+	
+	//got this far, return success
+	return true
 }
 
 

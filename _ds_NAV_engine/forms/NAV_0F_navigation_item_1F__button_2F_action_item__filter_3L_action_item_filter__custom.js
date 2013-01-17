@@ -36,7 +36,7 @@ globals.TRIGGER_tooltip_set()
 function REC_delete()
 {
 
-var delRec = plugins.dialogs.showWarningDialog('Delete record','Do you really want to delete this record?','Yes','No')
+var delRec = globals.DIALOGS.showWarningDialog('Delete record','Do you really want to delete this record?','Yes','No')
 
 if (delRec == 'Yes') {
 	controller.deleteRecord()
@@ -46,6 +46,7 @@ if (delRec == 'Yes') {
 /**
  *
  * @properties={typeid:24,uuid:"87a64fe2-eb1f-4e91-ad2e-2aff6f01aeb8"}
+ * @AllowToRunInFind
  */
 function REC_edit()
 {
@@ -86,6 +87,7 @@ globals.CODE_form_in_dialog(forms.NAV_P_action_item_filter,-1,-1,-1,-1,'Edit',fa
  * @param {JSEvent} event the event that triggered the action
  *
  * @properties={typeid:24,uuid:"5caf2221-192a-41d5-adb4-97f25508675f"}
+ * @AllowToRunInFind
  */
 function REC_new(event)
 {
@@ -166,7 +168,7 @@ function SHOW_sort()
 if (nav_action_item_filter_to_action_item && nav_action_item_filter_to_action_item.nav_action_item_to_navigation_item) {
 	var formName = nav_action_item_filter_to_action_item.nav_action_item_to_navigation_item.form_to_load
 	if (forms[formName]) {
-		plugins.dialogs.showInfoDialog('Choose sort','<html>1- Specify the desired sort<br>2- Press the COPY button<br>3- Close the sort chooser')
+		globals.DIALOGS.showInfoDialog('Choose sort','<html>1- Specify the desired sort<br>2- Press the COPY button<br>3- Close the sort chooser')
 		application.setClipboardContent('')
 		forms[formName].controller.sortDialog(nav_action_item_filter_to_action_item.filter_sort)
 		var clip = application.getClipboardString()
@@ -176,7 +178,7 @@ if (nav_action_item_filter_to_action_item && nav_action_item_filter_to_action_it
 		}
 	}
 	else {
-		plugins.dialogs.showErrorDialog('Form error','The workflow form specified does not exist')
+		globals.DIALOGS.showErrorDialog('Form error','The workflow form specified does not exist')
 	}
 }
 

@@ -110,6 +110,7 @@ if (initial_record && (initial_record_label == null || initial_record_label == '
 /**
  *
  * @properties={typeid:24,uuid:"75dbeb6a-e9fa-4382-908f-d066ce92e88d"}
+ * @AllowToRunInFind
  */
 function FLD_data_change__item_id()
 {
@@ -143,7 +144,7 @@ var results = navItems.search()
 if (results > 1 && item_id != '' && item_id != null) {
 //	item_id = null
 //	databaseManager.saveData()
-	plugins.dialogs.showWarningDialog(
+	globals.DIALOGS.showWarningDialog(
 				'Warning',
 				'This registry is not unique.\nAnother navigation item already has this one',
 				'OK')
@@ -234,7 +235,7 @@ if (utils.hasRecords(relnColumns)) {
 	}
 	//delete all column records if old and new table names are different
 	else {
-		var answer = plugins.dialogs.showWarningDialog(
+		var answer = globals.DIALOGS.showWarningDialog(
 							'Delete columns',
 							'<html>You have selected a form based on a different table.<br>' +
 								'All of the named columns will be deleted.<br>' +
@@ -253,13 +254,14 @@ if (utils.hasRecords(relnColumns)) {
 	}
 }
 
-form_to_load_table = forms[form_to_load].controller.getTableName()
-
-//create new associated column records if 1) new table or 2) no table
-if (application.getSolutionName() != 'ds_NAV_engine') {
-	forms.NAV_0L_navigation_item.UPDATE_table_columns()
+if (form_to_load) {
+	form_to_load_table = forms[form_to_load].controller.getTableName()
+	
+	//create new associated column records if 1) new table or 2) no table
+	if (application.getSolutionName() != 'ds_NAV_engine') {
+		forms.NAV_0L_navigation_item.UPDATE_table_columns()
+	}
 }
-
 }
 
 /**
@@ -280,7 +282,7 @@ function REC_delete()
  *
  */
 
-var delRec = plugins.dialogs.showWarningDialog('Delete record','Do you really want to delete this list display?','Yes','No')
+var delRec = globals.DIALOGS.showWarningDialog('Delete record','Do you really want to delete this list display?','Yes','No')
 
 var formName = 'NAV_0F_navigation_item_1F__detail'
 var relnName = 'nav_navigation_item_to_list_display'

@@ -195,7 +195,7 @@ switch (arguments[0]) {
 		break
 		
 	case 6: //refresh columns
-		var answer = plugins.dialogs.showQuestionDialog('Refresh','<html>Refresh column list with backend?<br>(Currently experimental - may hang system)','Yes','No')
+		var answer = globals.DIALOGS.showQuestionDialog('Refresh','<html>Refresh column list with backend?<br>(Currently experimental - may hang system)','Yes','No')
 		if (answer == 'Yes') {
 			UPDATE_table_columns()
 		}
@@ -266,7 +266,7 @@ function CHANGE_main_sub_main(itemID)
 				}
 			}
 			else {
-				plugins.dialogs.showErrorDialog(
+				globals.DIALOGS.showErrorDialog(
 							'Error',
 							'No navigation set selected'
 						)
@@ -320,7 +320,7 @@ function CHANGE_navigation_set(navID) {
 		}
 	}
 	else {
-		plugins.dialogs.showErrorDialog(
+		globals.DIALOGS.showErrorDialog(
 					'Error',
 					'No navigation set selected'
 				)
@@ -330,6 +330,7 @@ function CHANGE_navigation_set(navID) {
 /**
  *
  * @properties={typeid:24,uuid:"8c26c896-0030-44f7-913d-df3b2bcfd84a"}
+ * @AllowToRunInFind
  */
 function DIR_down()
 {
@@ -454,6 +455,7 @@ forms[formName][relationName].sort('node_1 asc, node_2 asc')
 /**
  *
  * @properties={typeid:24,uuid:"8461d0d7-ad5b-4261-8e5e-96156eec509f"}
+ * @AllowToRunInFind
  */
 function DIR_up()
 {
@@ -609,6 +611,7 @@ globals.TRIGGER_tooltip_set()
 /**
  *
  * @properties={typeid:24,uuid:"5b7d056a-9f97-45af-97d2-a005e1587b26"}
+ * @AllowToRunInFind
  */
 function REC_delete()
 {
@@ -618,7 +621,7 @@ var formName = 'NAV_0L_navigation_item_1L'
 var relationName = 'nav_navigation_item_to_navigation_item__children__all'
 var relnAction = 'nav_navigation_item_to_action_item__filter'
 
-var delRec = plugins.dialogs.showWarningDialog('Delete item','Do you really want to delete this navigation item?','Yes','No')
+var delRec = globals.DIALOGS.showWarningDialog('Delete item','Do you really want to delete this navigation item?','Yes','No')
 if (delRec == 'Yes') {
 	
 	var record = (arguments[0]) ? arguments[0] : forms[formName].foundset.getRecord(forms[formName].foundset.getSelectedIndex())
@@ -628,7 +631,7 @@ if (delRec == 'Yes') {
 		if (utils.hasRecords(record[relationName]) && record[relationName].getSize() > 1) {
 			var childCheck = true
 			
-			var confirm = plugins.dialogs.showWarningDialog(
+			var confirm = globals.DIALOGS.showWarningDialog(
 							'Delete item',
 							'This navigation item has children.  They will all be deleted.  Continue?',
 							'Yes',
@@ -827,7 +830,8 @@ if (delRec == 'Yes') {
 		}
 		
 		//redraw navitem list
-		forms.NAV__navigation_tree.LIST_redraw(null,theItem,true)
+		var navForm = (solutionPrefs.config.webClient) ? 'NAV__navigation_tree__WEB' : 'NAV__navigation_tree'
+		forms[navForm].LIST_redraw(null,theItem,true)
 		
 	}
 	//called in frameworks engine, refresh main workflow area if needed
@@ -846,6 +850,7 @@ if (delRec == 'Yes') {
 /**
  *
  * @properties={typeid:24,uuid:"6d3f1ffc-6795-433a-8a9c-2800186a896f"}
+ * @AllowToRunInFind
  */
 function REC_duplicate()
 {
@@ -1165,6 +1170,7 @@ forms.NAV_0F_navigation_item_1F__detail.elements.fld_item_name.requestFocus()
 /**
  *
  * @properties={typeid:24,uuid:"3cd32a13-61e6-419e-8709-2cdcbc8fb7db"}
+ * @AllowToRunInFind
  */
 function REC_new_sub()
 {
@@ -1352,7 +1358,7 @@ var tableReln = (arguments[0]) ? arguments[0] : forms[formName].form_to_load_tab
 
 //check if form_to_load is a valid entry
 if (!forms[formLoad]) {
-	plugins.dialogs.showErrorDialog('Form missing','The selected form to load does not exist in this solution','OK')
+	globals.DIALOGS.showErrorDialog('Form missing','The selected form to load does not exist in this solution','OK')
 	forms[formName].elements.fld_form_to_load.requestFocus(false)
 }
 else {
@@ -1375,20 +1381,23 @@ else {
 	
 	//get sorted array of columnNames from backend
 	var jsTable = databaseManager.getTable(serverName, tableName)
-	var aColumnName = jsTable.getColumnNames()
 	var columnNames = new Array()
-		
-	for ( var i = 0 ; i < aColumnName.length ; i++ ) {
-		var jsColumn = jsTable.getColumn(aColumnName[i])
-		var columnInfo = new Object()
-		
-		columnInfo['nameColumn'] = jsColumn.getSQLName().toLowerCase() //format as lower case
-		columnInfo['typeColumn'] = jsColumn.getTypeAsString().toUpperCase() //format as upper case
-		
-		columnNames[i] = columnInfo
-	}
-	columnNames.sort()
 	
+	//this form is based on a table, ok to proceed
+	if (jsTable) {
+		var aColumnName = jsTable.getColumnNames()
+		
+		for ( var i = 0 ; i < aColumnName.length ; i++ ) {
+			var jsColumn = jsTable.getColumn(aColumnName[i])
+			var columnInfo = new Object()
+			
+			columnInfo['nameColumn'] = jsColumn.getSQLName().toLowerCase() //format as lower case
+			columnInfo['typeColumn'] = jsColumn.getTypeAsString().toUpperCase() //format as upper case
+			
+			columnNames[i] = columnInfo
+		}
+		columnNames.sort()
+	}
 	
 	
 	//get current column values from in sutra_column (columnNamesStored)

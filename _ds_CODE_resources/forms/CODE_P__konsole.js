@@ -845,6 +845,7 @@ return true;
 /**
  *
  * @properties={typeid:24,uuid:"578267B6-CE26-4886-B539-C8E6E73E57A3"}
+ * @AllowToRunInFind
  */
 function console_run()
 {
@@ -920,6 +921,7 @@ return bReturn;
 /**
  *
  * @properties={typeid:24,uuid:"6B80527D-CFC3-4D24-AED9-CE075878AA21"}
+ * @AllowToRunInFind
  */
 function console_schema()
 {
@@ -1229,6 +1231,7 @@ if (oArg.syntax)
 	var oSyntax = new Object();
 	oSyntax.description = "View information used by Data Sutra."
 	oSyntax.syntax = new Array();
+	oSyntax.syntax.push('sutra <i>sitemap</i></b> (View the sitemap for navigation items web-client configured)');
 	oSyntax.syntax.push('sutra <i>sol</i></b> (View the solutionPrefs object that stores all non-navigation meta-data)');
 	oSyntax.syntax.push('sutra <i>nav</i></b> (View the navigationPrefs object with all navigation and action meta-data)');
 	oSyntax.syntax.push('sutra <i>thisNav</i></b> (View the navigationPrefs node for the currently displayed form)');
@@ -1241,6 +1244,10 @@ if (oArg.syntax)
 }
 
 switch (oArg.arg) {
+	case 'sitemap':
+		globals.consoleInput = 'view navigationPrefs.siteMap';
+		processInput(true);
+		break
 	case 'sol':
 		globals.consoleInput = 'view solutionPrefs';
 		processInput(true);
@@ -1967,6 +1974,9 @@ function onShow()
 
 elements.fldInput.requestFocus();
 
+//custom form setup for iOS FiD
+globals.CODE_form_in_dialog_setup_ipad()
+
 }
 
 /**
@@ -2498,6 +2508,10 @@ if (sSearch == null)
 if (sReplace == null)
 {
 	sReplace = '';
+}
+//TSE mod 8/10/2012
+else if (typeof sReplace == 'boolean' || sReplace instanceof Date) {
+	sReplace = sReplace.toString()
 }
 
 var sReturn = utils.stringReplace(sString, sSearch, sReplace);

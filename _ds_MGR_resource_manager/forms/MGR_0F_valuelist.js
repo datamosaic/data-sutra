@@ -1,4 +1,6 @@
 /**
+ * @type {String}
+ *
  * @properties={typeid:35,uuid:"B432F559-7FCE-4F61-AC3E-F294C9B89ABC"}
  */
 var _vlTest = null;
@@ -33,7 +35,7 @@ function ACTION_create_valuelists()
  * gate keeper
 */
 
-var input = plugins.dialogs.showWarningDialog(
+var input = globals.DIALOGS.showWarningDialog(
 				"Warning",
 				"This method will create records in your repository.\n" +
 				"This is NOT supported by Servoy. So BACK UP before running this!!!\n" +
@@ -42,7 +44,7 @@ var input = plugins.dialogs.showWarningDialog(
 				
 if (input != "Yes") {
 
-	plugins.dialogs.showInfoDialog(
+	globals.DIALOGS.showInfoDialog(
 				"Cancelled",
 				"Action cancelled.",
 				"Ok")
@@ -94,7 +96,7 @@ for ( var i = 0 ; i < valueListNamesData.length ; i++ ) {
 
 // -- if no data, exit
 if (!valueListNames.length) {
-	plugins.dialogs.showErrorDialog(
+	globals.DIALOGS.showErrorDialog(
 		"Error",
 		"No new value lists to add",
 		"Ok")
@@ -331,7 +333,7 @@ for ( var i = 0 ; i < updateStatements.length ; i++ ) {
  * finish up
 */
 
-plugins.dialogs.showInfoDialog(
+globals.DIALOGS.showInfoDialog(
 				"Complete",
 				"Action completed.\n" +
 				"Restart Servoy Developer NOW!",
@@ -433,7 +435,7 @@ switch( arguments[0] ) {
 		//ACTION_create_valuelists()
 		break
 	case  3: //delete all
-		var input = plugins.dialogs.showWarningDialog("Warning", "Delete all records?", "Yes", "No")
+		var input = globals.DIALOGS.showWarningDialog("Warning", "Delete all records?", "Yes", "No")
 		if (input == "Yes") {	
 			forms.MGR_0F_valuelist_1L.controller.deleteAllRecords()
 			
@@ -450,6 +452,7 @@ switch( arguments[0] ) {
 /**
  *
  * @properties={typeid:24,uuid:"631C11D3-8331-491F-AC4C-05F51B00A5E0"}
+ * @AllowToRunInFind
  */
 function FILTER_related_1()
 {
@@ -487,6 +490,7 @@ forms.MGR_0F_valuelist_1L.elements.fld_value_list.requestFocus()
 /**
  *
  * @properties={typeid:24,uuid:"AF110CCB-356F-498E-9772-A36F5DAC6D62"}
+ * @AllowToRunInFind
  */
 function FILTER_value_list()
 {
@@ -612,7 +616,7 @@ function REC_new()
 	}
 	//no valuelist selected
 	else {
-		plugins.dialogs.showErrorDialog(
+		globals.DIALOGS.showErrorDialog(
 					'Error',
 					'Select valuelist in the left pane before proceeding'
 			)
@@ -622,6 +626,7 @@ function REC_new()
 /**
  *
  * @properties={typeid:24,uuid:"A905FF91-FE0D-471A-95FC-A0630C814424"}
+ * @AllowToRunInFind
  */
 function REC_show_all()
 {

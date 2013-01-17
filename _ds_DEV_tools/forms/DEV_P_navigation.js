@@ -62,7 +62,7 @@ if (globals.DEV_P_navigation) {
 	globals.CODE_form_in_dialog_close('printOverviewSimple')
 }
 else {
-	plugins.dialogs.showErrorDialog('Nothing selected', 'You must choose one or more navigation sets','OK')
+	globals.DIALOGS.showErrorDialog('Nothing selected', 'You must choose one or more navigation sets','OK')
 }
 }
 
@@ -98,6 +98,9 @@ globals.CODE_hide_form = 0
 //clear all globals
 globals.DEV_P_navigation = null
 globals.DEV_P_all = null
+
+//custom form setup for iOS FiD
+globals.CODE_form_in_dialog_setup_ipad()
 }
 
 /**

@@ -208,6 +208,7 @@ FILTER_forms()
 /**
  *
  * @properties={typeid:24,uuid:"5cfde065-fd56-49e2-a662-bec295e802de"}
+ * @AllowToRunInFind
  */
 function GET_record()
 {

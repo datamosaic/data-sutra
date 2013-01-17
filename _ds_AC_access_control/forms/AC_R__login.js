@@ -1,10 +1,15 @@
 /**
  *
- * @properties={typeid:24,uuid:"645DA34B-5B97-4E41-84B1-49B08A168E05"}
+ * @properties={typeid:24,uuid:"e421e58a-3ca9-4d2a-9ee5-4e3bb5da0432"}
+ * @AllowToRunInFind
  */
 function FORM_on_show(firstShow)
 {
-
+	//don't run anything on this form when in web client
+	if (application.getApplicationType() == APPLICATION_TYPES.WEB_CLIENT) {
+		return
+	}
+	
 /*
  *	TITLE    :	FORM_on_show
  *			  	
@@ -42,9 +47,9 @@ var noPassword = this.loginDisabled
 elements.lbl_date.text = globals.CODE_date_format(new Date())
 
 //hide mosaic elements used for nice footer		//TODO: possibly provide a hook into this
-//elements.lbl_footer.visible = false
-//elements.lbl_footer_left.visible = false
-//elements.lbl_footer_right.visible = false
+elements.lbl_footer.visible = false
+elements.lbl_footer_left.visible = false
+elements.lbl_footer_right.visible = false
 
 //which group was the last one to log in
 var groupID = application.getUserProperty('sutra' + application.getServerURL().substr(7) + 'Group')
@@ -84,34 +89,32 @@ if (staticIntro || (preview && !blogRecord) || ((!blogRecord || !fsPrefs.blog_en
 	//set banner text
 	elements.lbl_banner.text = fsPrefs.initial_splash_header
 	
+	var thisYear = utils.dateFormat(new Date(),'yyyy')
+	
 	//show footer
 	if (fsPrefs.initial_splash_header == 'Welcome to Data Sutra!') {
-		forms.DATASUTRA_0F_solution__footer.elements.lbl_status.text = '<html><head></head><body>Data Mosaic &#8212; Copyright &#169; 2006-2012</body></html>'
-		forms.DATASUTRA_0F_solution__footer.elements.lbl_status.toolTipText = 'Data Sutra'
-//		elements.lbl_footer_left.text = 'Data Sutra'
-//		elements.lbl_footer_right.text = '<html><head></head><body>Data Mosaic &#8212; Copyright &#169; 2006-2012</body></html>'
-//		
-//		elements.lbl_footer.visible = true
-//		elements.lbl_footer_left.visible = true
-//		elements.lbl_footer_right.visible = true
-//		
-//		if (firstShow) {
-//			elements.fld_blog.setSize(elements.fld_blog.getWidth(), elements.fld_blog.getHeight() - 16)
-//		}
+		elements.lbl_footer_left.text = 'Data Sutra'
+		elements.lbl_footer_right.text = '<html><head></head><body>Data Mosaic &#8212; Copyright &#169; 2006-' + thisYear + '</body></html>'
+		
+		elements.lbl_footer.visible = true
+		elements.lbl_footer_left.visible = true
+		elements.lbl_footer_right.visible = true
+		
+		if (firstShow) {
+			elements.fld_blog.setSize(elements.fld_blog.getWidth(), elements.fld_blog.getHeight() - 23)
+		}
 	}
 	else if (fsPrefs.initial_splash_header == 'Welcome to Sutra CMS!') {
-		forms.DATASUTRA_0F_solution__footer.elements.lbl_status.text = '<html><head></head><body>Data Mosaic &#8212; Copyright &#169; 2011-2012, MIT Licensed</body></html>'
-		forms.DATASUTRA_0F_solution__footer.elements.lbl_status.toolTipText = 'Sutra CMS'
-//		elements.lbl_footer_left.text = 'Sutra CMS'
-//		elements.lbl_footer_right.text = '<html><head></head><body>Data Mosaic &#8212; Copyright &#169; 2011-2012, MIT Licensed</body></html>'
-//		
-//		elements.lbl_footer.visible = true
-//		elements.lbl_footer_left.visible = true
-//		elements.lbl_footer_right.visible = true
-//		
-//		if (firstShow) {
-//			elements.fld_blog.setSize(elements.fld_blog.getWidth(), elements.fld_blog.getHeight() - 16)
-//		}
+		elements.lbl_footer_left.text = 'Sutra CMS'
+		elements.lbl_footer_right.text = '<html><head></head><body>Data Mosaic &#8212; Copyright &#169; 2011-' + thisYear + ', MIT Licensed</body></html>'
+		
+		elements.lbl_footer.visible = true
+		elements.lbl_footer_left.visible = true
+		elements.lbl_footer_right.visible = true
+		
+		if (firstShow) {
+			elements.fld_blog.setSize(elements.fld_blog.getWidth(), elements.fld_blog.getHeight() - 23)
+		}
 	}
 	
 	var html = fsPrefs.initial_splash_screen
@@ -304,25 +307,27 @@ else {
 
 //when no password mode, hide misc and qotd
 if (noPassword) {
-//	elements.box_qotd.visible = false
+	elements.box_qotd.visible = false
 	elements.lbl_qotd.visible = false
 	elements.fld_qotd.visible = false
 	
-//	elements.box_misc.visible = false
+	elements.box_misc.visible = false
 	elements.lbl_misc.visible = false
 	elements.fld_misc.visible = false
 }
 //show them
 else {
-//	elements.box_qotd.visible = true
+	elements.box_qotd.visible = true
 	elements.lbl_qotd.visible = true
 	elements.fld_qotd.visible = true
 	
-//	elements.box_misc.visible = true
+	elements.box_misc.visible = true
 	elements.lbl_misc.visible = true
 	elements.fld_misc.visible = true
 }
 
-
-
+//turn off loading hider for smart client
+if (!solutionPrefs.config.webClient) {
+	forms.DATASUTRA_0F_solution.elements.gfx_curtain_blank.visible = false
+}
 }

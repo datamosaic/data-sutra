@@ -42,6 +42,7 @@ globals.CODE_cursor_busy(false)
 /**
  *
  * @properties={typeid:24,uuid:"336a45b8-f912-4aa6-aa83-e239a38347c7"}
+ * @AllowToRunInFind
  */
 function REC_open_close()
 {
@@ -170,4 +171,23 @@ forms[formName].controller.sort('node_1 asc, node_2 asc')
 
 //select correct record
 forms[formName].foundset.selectRecord(idNavItem)
+}
+
+/**
+ * Callback method for when form is shown.
+ *
+ * @param {Boolean} firstShow form is shown first time after load
+ * @param {JSEvent} event the event that triggered the action
+ *
+ * @properties={typeid:24,uuid:"36EFD3E6-9C52-40C8-89E5-9C98B94C995C"}
+ */
+function FORM_on_show(firstShow, event) {
+	if (firstShow) {
+		if (solutionPrefs.config.webClient) {
+			elements.fld_triangle.visible = true
+		}
+		else {
+			elements.lbl_triangle.visible = true
+		}
+	}
 }

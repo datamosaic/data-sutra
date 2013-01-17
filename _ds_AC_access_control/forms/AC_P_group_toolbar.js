@@ -1,4 +1,6 @@
 /**
+ * @type {Number}
+ *
  * @properties={typeid:35,uuid:"ACC5C60D-ABF7-4936-8DCD-C34ADCADA622",variableType:4}
  */
 var addSome = 0;
@@ -146,5 +148,8 @@ function FORM_on_show() {
 	
 	//form variable
 	addSome = 0
+	
+	//custom form setup for iOS FiD
+	globals.CODE_form_in_dialog_setup_ipad()
 
 }

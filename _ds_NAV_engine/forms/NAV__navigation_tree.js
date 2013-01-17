@@ -1,7 +1,16 @@
 /**
+ * @type {Number}
+ *
  * @properties={typeid:35,uuid:"D711A8F9-DB0C-4C1A-B62E-0FD72DC276C9",variableType:4}
  */
-var _faveMode = 1;
+var _faveMode = 0;
+
+/**
+ * Array that will hold information about currently showing rows.
+ * 
+ * @properties={typeid:35,uuid:"8BEF2D83-B94F-4611-BEC9-D0E272F3F73D",variableType:-4}
+ */
+var _rows = null;
 
 /**
  * @properties={typeid:24,uuid:"835C298B-5875-4CDB-9C5F-B719F27951F6"}
@@ -86,21 +95,65 @@ function ACTIONS_list(input) {
  */
 function FORM_on_show(firstShow, event) {
 	if (firstShow && application.__parent__.solutionPrefs && application.__parent__.navigationPrefs) {
-		var navItemID = navigationPrefs.byNavSetID[globals.DATASUTRA_navigation_set].lastNavItem
+		//url was requested before login; go there now
+		if (globals.DATASUTRA_router.length && globals.DATASUTRA_router[0] && globals.DATASUTRA_router[0].path && globals.DATASUTRA_router[0].path.set != 'DSLogin') {
+			var nav = navigationPrefs.siteMap
+			var url = globals.DATASUTRA_router[0].path
+			var itemID
+			
+			//particular item specified
+			if (url.set && nav[url.set] && url.item) {
+				//this item exists
+				if (nav[url.set][url.item]) {
+					itemID = nav[url.set][url.item].navItemID
+				}
+			}
+			//only nav set specified, grab first navigation item
+			else if (url.set && nav[url.set]) {
+				//don't really need a loop, but need to grab an element inside the set referenced
+				for (var i in nav[url.set]) {
+					itemID = navigationPrefs.byNavSetID[nav[url.set][i].details.navigationItem.idNavigation].itemsByOrder[0].navigationItem.idNavigationItem
+					break
+				}
+			}
+		}
 		
-		//recreate list
+		//use 1st item in history for itemID or last item in this navigation set or default item for this navset
+		var navItemID = itemID || navigationPrefs.byNavSetID[globals.DATASUTRA_navigation_set].lastNavItem || navigationPrefs.byNavSetID[globals.DATASUTRA_navigation_set].itemsByOrder[0].navigationItem.idNavigationItem
+		
+		//create list
 		var treeDepth = LIST_generate(navItemID)
 		
-		//update labels
-		LABEL_update(treeDepth > 1)
+		//call router to switch entire page
+		if (globals.DATASUTRA_router_enable) {
+			//reset flag that this is initial history load
+			if (globals.DATASUTRA_router_initialHix) {
+				globals.DATASUTRA_router_initialHix = false
+			}
+			//when running history on login, do not draw navigation pane
+			else {
+				//4th param is special case for embedded login from external site
+				globals.DS_router(null,null,navItemID,globals.DATASUTRA_router_login)
+			}
+		}
+		//smart or straight-up web client
+		else {
+			//update labels
+			LABEL_update(treeDepth > 1)
+			
+			//go to selected form; notify load forms routine that this is the first one loaded
+			globals.NAV_workflow_load(
+								navItemID,
+								null,
+								null,
+								true
+							)
+		}
 		
-		//go to selected form; notify load forms routine that this is the first one loaded
-		globals.NAV_workflow_load(
-							navItemID || navigationPrefs.byNavSetID[globals.DATASUTRA_navigation_set].itemsByOrder[0].navigationItem.idNavigationItem,
-							null,
-							null,
-							true
-						)
+		//show highlighter
+		if (solutionPrefs.config.webClient = forms.NAV__navigation_tree__rows._elementSelected) {
+			plugins.WebClientUtils.setExtraCssClass(forms.NAV__navigation_tree__rows.elements[forms.NAV__navigation_tree__rows._elementSelected], 'gfxLeftHilite')
+		}
 	}
 }
 
@@ -143,13 +196,6 @@ function LABEL_update(optionsVisible) {
 	//update label
 	elements.lbl_header.text = (displayValue) ? displayValue.toUpperCase() : 'NAVIGATION'
 }
-
-/**
- * Array that will hold information about currently showing rows.
- * 
- * @properties={typeid:35,uuid:"8BEF2D83-B94F-4611-BEC9-D0E272F3F73D",variableType:-4}
- */
-var _rows = null;
 
 /**
  * Trash existing rows and add new ones.
@@ -196,7 +242,7 @@ function LIST_generate(selected) {
 		}
 		
 		//get form and clear
-		var formName = controller.getName() + '__rows'
+		var formName = 'NAV__navigation_tree__rows'
 		var thisForm = solutionModel.getForm(formName)
 		
 		//remove all elements from target form
@@ -243,7 +289,9 @@ function LIST_generate(selected) {
 				lblClick.mediaOptions = SM_MEDIAOPTION.REDUCE | SM_MEDIAOPTION.ENLARGE
 				lblClick.onAction = thisForm.getFormMethod('LIST_redraw')
 				lblClick.rolloverCursor = SM_CURSOR.HAND_CURSOR
-				lblClick.rolloverImageMedia = solutionModel.getMedia("row_selected_light.png")
+				if (!solutionPrefs.config.webClient) {
+					lblClick.rolloverImageMedia = solutionModel.getMedia('row_selected_light.png')
+				}
 				if (details.description) {
 					lblClick.toolTipText = details.description
 				}
@@ -287,6 +335,10 @@ function LIST_generate(selected) {
 				lblData.anchors = SM_ANCHOR.NORTH | SM_ANCHOR.EAST | SM_ANCHOR.WEST
 				lblData.formIndex = 10
 				lblData.name = 'lbl_row_' + i
+				//put action on the text in webclient, but not smart client
+				if (solutionPrefs.config.webClient) {// && !details.navItemID == selected) {
+					lblData.onAction = thisForm.getFormMethod('LIST_redraw')
+				}
 				lblData.showClick = false
 				lblData.showFocus = false
 				lblData.transparent = true
@@ -312,7 +364,15 @@ function LIST_generate(selected) {
 				//row selected, highlight
 				if (details.navItemID == selected) {
 					//HIGHLIGHT
-					lblClick.imageMedia = solutionModel.getMedia("row_selected.png")
+					if (solutionPrefs.config.webClient) {
+//						lblClick.imageMedia = solutionModel.getMedia("row_selected.png")
+						var elem = lblClick.name
+//						lblClick.background = '#262626'
+//						lblClick.transparent = false
+					}
+					else {
+						lblClick.imageMedia = solutionModel.getMedia("row_selected.png")
+					}
 					lblClick.onAction = null
 					lblClick.rolloverCursor = SM_CURSOR.DEFAULT_CURSOR
 					lblClick.rolloverImageMedia = null
@@ -342,6 +402,11 @@ function LIST_generate(selected) {
 		
 		//recreate ui
 		forms[formName].controller.recreateUI()
+		
+		//an element is selected, add the style class
+		if (elem && solutionPrefs.config.webClient) {
+			forms.NAV__navigation_tree__rows._elementSelected = elem
+		}
 		
 		//how many levels does this tree have
 		return treeDepth
@@ -491,7 +556,7 @@ function LIST_toggle_all() {
 					//find parent
 					for (var i = found; i >= 0; i--) {
 						if (!navigationPrefs.byNavSetID[globals.DATASUTRA_navigation_set].itemsByOrder[i].navigationItem.nodeTwo) {
-							forms.NAV__navigation_tree__rows.LIST_redraw(navigationPrefs.byNavSetID[globals.DATASUTRA_navigation_set].itemsByOrder[i].navigationItem.idNavigationItem,true)
+							forms.NAV__navigation_tree__rows.LIST_redraw(null,navigationPrefs.byNavSetID[globals.DATASUTRA_navigation_set].itemsByOrder[i].navigationItem.idNavigationItem,true)
 							break
 						}
 					}
@@ -500,6 +565,9 @@ function LIST_toggle_all() {
 				else {
 					forms.NAV__navigation_tree__rows.LIST_redraw(null,idNavItem,true)
 				}
+				
+				//re set up the screen
+				globals.DS_router_recreateUI()
 			}
 		}
 	}
@@ -565,8 +633,12 @@ function LIST_favorites(selected) {
 		}
 		
 		//get form and clear
-		var formName = controller.getName() + '__rows'
+		var formName = 'NAV__navigation_tree__rows'
 		var thisForm = solutionModel.getForm(formName)
+		
+		//grab width
+		var parentForm = (solutionPrefs.config.webClient) ? 'NAV__navigation_tree__WEB' : 'NAV__navigation_tree'
+		var newWidth = forms[parentForm].controller.getFormWidth()
 		
 		//remove all elements from target form
 		var allComponents = thisForm.getComponents()
@@ -591,7 +663,7 @@ function LIST_favorites(selected) {
 				
 				//put in headings
 				if (faveHeaders && faveHeaders[details.datasource] == i) {
-					var lblHeadBack = thisForm.newLabel('',0,i * 20 + headingOffset,thisForm.width,20)
+					var lblHeadBack = thisForm.newLabel('',0,i * 20 + headingOffset,newWidth,20)
 					lblHeadBack.anchors = SM_ANCHOR.NORTH | SM_ANCHOR.EAST | SM_ANCHOR.WEST
 					lblHeadBack.formIndex = 1
 					lblHeadBack.name = 'lbl_group_' + details.datasource.split('/').pop() + '_back'
@@ -601,7 +673,7 @@ function LIST_favorites(selected) {
 					lblHeadBack.mediaOptions = SM_MEDIAOPTION.REDUCE | SM_MEDIAOPTION.ENLARGE
 					lblHeadBack.imageMedia = solutionModel.getMedia("row_selected_dark.png")
 					
-					var lblHead = thisForm.newLabel(navigationPrefs.byNavItemID[details.navItemID].navigationItem.fwListTitle,0,i * 20 + headingOffset,thisForm.width,20)
+					var lblHead = thisForm.newLabel(navigationPrefs.byNavItemID[details.navItemID].navigationItem.fwListTitle,0,i * 20 + headingOffset,newWidth,20)
 					lblHead.anchors = SM_ANCHOR.NORTH | SM_ANCHOR.EAST | SM_ANCHOR.WEST
 					lblHead.formIndex = 2
 					lblHead.name = 'lbl_group_' + details.datasource.split('/').pop()
@@ -620,7 +692,7 @@ function LIST_favorites(selected) {
 				}
 				
 				//how wide are we showing
-				var shownWidth = forms.DATASUTRA_0F_solution.elements.tab_content_A.getWidth() - 8
+				var shownWidth = (solutionPrefs.config.webClient ? forms.DATASUTRA_WEB_0F__list__navigation.controller.getFormWidth() : forms.DATASUTRA_0F_solution.elements.tab_content_A.getWidth()) - 8
 				
 				//conversion factor
 				var convFactor = shownWidth / totalWidth
@@ -684,7 +756,7 @@ function LIST_favorites(selected) {
 				}
 				
 				//HIGHLIGHT
-				var lblClick = thisForm.newLabel('',0,i * 20 + headingOffset,thisForm.width,20)
+				var lblClick = thisForm.newLabel('',0,i * 20 + headingOffset,newWidth,20)
 				lblClick.anchors = SM_ANCHOR.NORTH | SM_ANCHOR.EAST | SM_ANCHOR.WEST
 				lblClick.formIndex = 1
 				lblClick.name = 'lbl_rowback_' + i

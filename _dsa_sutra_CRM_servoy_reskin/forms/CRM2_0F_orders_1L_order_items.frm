@@ -50,7 +50,7 @@ typeid:4,
 uuid:"1a04b3ce-51bd-4ddb-8344-4240cbb43273"
 },
 {
-anchors:3,
+anchors:9,
 borderType:"SpecialMatteBorder,0.0,0.0,1.0,0.0,#000000,#000000,#999999,#000000,0.0,1.0",
 formIndex:15300,
 imageMediaID:"16c4d692-c1ea-4200-a078-1150b1da4d5f",
@@ -123,7 +123,6 @@ uuid:"ecf56176-502b-4ba9-b241-32071c9ddf57"
 ],
 name:"CRM2_0F_orders_1L_order_items",
 paperPrintScale:100,
-rowBGColorCalculation:"globals.CODE_row_background",
 scrollbars:33,
 size:"670,45",
 styleName:"_DATASUTRA_",

@@ -1,6 +1,7 @@
 /**
  *
  * @properties={typeid:24,uuid:"dadd13fb-9675-48cd-aa01-a77a80ab42f8"}
+ * @AllowToRunInFind
  */
 function FLD_data_change__company_id()
 {
@@ -64,32 +65,11 @@ else if (elements.tab_shipping.tabIndex == 2) {
  *
  * @properties={typeid:24,uuid:"f9487842-eab2-459f-9fd9-542bf72d2e23"}
  */
-function FORM_on_show()
+function FORM_on_show(firstShow, event)
 {
-
-/*
- *	TITLE    :	FORM_on_show
- *			  	
- *	MODULE   :	start_CRM_mosaic
- *			  	
- *	ABOUT    :	hides the default highlighter object
- *			  	
- *	INPUT    :	
- *			  	
- *	OUTPUT   :	
- *			  	
- *	REQUIRES :	
- *			  	
- *	USAGE    :	FORM_on_show()
- *			  	
- *	MODIFIED :	July 31, 2008 -- Troy Elliott, Data Mosaic
- *			  	
- */
-
-//hide field highlighter
-globals.CODE_highlight_off('CRM2_0F_orders')
-
-
+	if (scopes.NT) {
+		scopes.NT.sidebarSet(event)
+	}
 }
 
 /**
@@ -183,7 +163,7 @@ function REC_delete()
  *			  	
  */
 
-var delRec = plugins.dialogs.showWarningDialog(
+var delRec = globals.DIALOGS.showWarningDialog(
 				'Delete record',
 				'Do you really want to delete this order?',
 				'Yes',
@@ -257,14 +237,14 @@ if (addrCnt && contCnt) {
 }
 else if (addrCnt == 0) {
 	//show error
-	plugins.dialogs.showErrorDialog(
+	globals.DIALOGS.showErrorDialog(
 					'Missing address',
 					'There needs to be at least one address defined for this customer before you can create an order.',
 					'OK')
 }
 else if (contCnt == 0) {
 	//show error
-	plugins.dialogs.showErrorDialog(
+	globals.DIALOGS.showErrorDialog(
 					'Missing contact',
 					'There needs to be at least one contact defined for this customer before you can create an order.',
 					'OK')
@@ -275,7 +255,7 @@ else if (contCnt == 0) {
  *
  * @properties={typeid:24,uuid:"67d92206-c10a-4caf-b450-6f126e939734"}
  */
-function REC_on_select()
+function REC_on_select(event)
 {
 
 /*
@@ -312,6 +292,10 @@ if (utils.hasRecords(eval(relnName))) {
 else {
 	globals.CRM_address_display = null
 }
+
+if (scopes.NT) {
+	scopes.NT.sidebarSet(event)
+}
 }
 
 /**
@@ -341,11 +325,11 @@ function STATUS_adjust()
  */
 
 if (utils.hasRecords(foundset)) {
-	var newStatus = plugins.dialogs.showSelectDialog(
+	var newStatus = globals.DIALOGS.showSelectDialog(
 						'Change order status',
 						'Please set the correct status',
-						'Open',
-						'Closed'
+						['Open',
+						'Closed']
 					)
 	
 	if (newStatus == 'Open') {

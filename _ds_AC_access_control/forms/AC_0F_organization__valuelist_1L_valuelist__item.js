@@ -7,7 +7,7 @@
  */
 function REC_delete(event) {
 	if (foundset.getSize() == 1) {
-		var delRec = plugins.dialogs.showWarningDialog(
+		var delRec = globals.DIALOGS.showWarningDialog(
 					'Delete valuelist',
 					'This is the last valuelist item.  Do you want to delete the valuelist?',
 					'Yes',
@@ -15,7 +15,7 @@ function REC_delete(event) {
 				)
 	}
 	else {
-		var delRec = plugins.dialogs.showWarningDialog(
+		var delRec = globals.DIALOGS.showWarningDialog(
 					'Delete record',
 					'Do you really want to delete the selected valuelist item?',
 					'Yes',
@@ -109,7 +109,7 @@ function REC_new() {
 		elements.fld_visible.requestFocus()
 	}
 	else {
-		plugins.dialogs.showErrorDialog(
+		globals.DIALOGS.showErrorDialog(
 					'No valuelist',
 					'You must select a valuelist first'
 			)
@@ -118,6 +118,7 @@ function REC_new() {
 
 /**
  * @properties={typeid:24,uuid:"3C0B789A-8454-44F9-81CE-8CE1B5053583"}
+ * @AllowToRunInFind
  */
 function REC_new_sub() {
 	var selectedIndex = foundset.getSelectedIndex()
@@ -246,6 +247,7 @@ function FORM_on_show(firstShow, event) {
  * @param {JSEvent} event the event that triggered the action
  *
  * @properties={typeid:24,uuid:"4E8E3E60-7C78-4ACD-B448-2CA15227D393"}
+ * @AllowToRunInFind
  */
 function PICK_relation_1(event) {
 	//fill valuelist with all "parent" options

@@ -39,6 +39,7 @@ globals.CODE_form_in_dialog_close('inlineNavItem')
 /**
  *
  * @properties={typeid:24,uuid:"41a5d9c6-4c7f-42b6-86f6-34f3a00e704f"}
+ * @AllowToRunInFind
  */
 function ACTION_ok()
 {
@@ -162,7 +163,8 @@ globals.CODE_form_in_dialog_close('inlineNavItem')
 
 //nav item name changed, redraw navitem list
 if (redraw) {
-	forms.NAV__navigation_tree.LIST_redraw(null,record.id_navigation_item,true)
+	var navForm = (solutionPrefs.config.webClient) ? 'NAV__navigation_tree__WEB' : 'NAV__navigation_tree'
+	forms[navForm].LIST_redraw(null,record.id_navigation_item,true)
 }
 
 
@@ -197,5 +199,6 @@ function FORM_on_show()
 //disable closing the form
 globals.CODE_hide_form = 0
 
-
+//custom form setup for iOS FiD
+globals.CODE_form_in_dialog_setup_ipad()
 }

@@ -112,6 +112,7 @@ else {
 /**
  *
  * @properties={typeid:24,uuid:"71f8c755-2210-40df-a121-2afe3d0b0567"}
+ * @AllowToRunInFind
  */
 function FLD_data_change__item_id()
 {
@@ -145,7 +146,7 @@ var results = navItems.search()
 if (results > 1 && itemID != '' && itemID != null) {
 	item_id = null
 	
-	plugins.dialogs.showErrorDialog(
+	globals.DIALOGS.showErrorDialog(
 				'Error',
 				'This registry is not unique.  Another navigation item\nalready has this one. Please choose a new registry',
 				'OK')
@@ -206,7 +207,7 @@ if (utils.hasRecords(relnColumns)) {
 	}
 	//delete all column records if old and new table names are different
 	else {
-		var answer = plugins.dialogs.showWarningDialog(
+		var answer = globals.DIALOGS.showWarningDialog(
 							'Delete columns',
 							'<html>You have selected a form based on a different table.<br>' +
 								'All of the named columns will be deleted.<br>' +

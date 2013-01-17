@@ -1,6 +1,7 @@
 /**
  *
  * @properties={typeid:24,uuid:"7dc9e4d7-73ce-4512-b6a4-4f4a58afdaf8"}
+ * @AllowToRunInFind
  */
 function ACTION_activate()
 {
@@ -115,14 +116,14 @@ if (!results) {
 
 //disable adding a method to a divider
 if (forms[formName].menu_name && (forms[formName].menu_name == '-' || utils.stringPatternCount(forms[formName].menu_name, '---') > 0)) {
-	plugins.dialogs.showErrorDialog(
+	globals.DIALOGS.showErrorDialog(
 					'Divider error',
 					'You cannot assign code to a divider'
 				)
 }
 //check if it is possible to assign a method
 else if (!forms[formName].menu_name) {
-	plugins.dialogs.showErrorDialog(
+	globals.DIALOGS.showErrorDialog(
 				'Error',
 				'You must create and name a menu item first',
 				'OK'

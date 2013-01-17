@@ -64,7 +64,7 @@ if (globals.MGR_tooltip__module) {
 	globals.CODE_form_in_dialog_close('printTipSimple')
 }
 else {
-	plugins.dialogs.showErrorDialog('Nothing selected', 'You must choose one or more modules','OK')
+	globals.DIALOGS.showErrorDialog('Nothing selected', 'You must choose one or more modules','OK')
 }
 }
 
@@ -100,6 +100,9 @@ globals.CODE_hide_form = 0
 //clear all globals
 globals.MGR_tooltip__module = null
 globals.MGR_tooltip__module_all = null
+
+//custom form setup for iOS FiD
+globals.CODE_form_in_dialog_setup_ipad()
 }
 
 /**

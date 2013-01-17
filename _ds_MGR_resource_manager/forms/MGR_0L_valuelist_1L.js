@@ -1,6 +1,7 @@
 /**
  *
  * @properties={typeid:24,uuid:"2277DD55-18DB-4FD8-9AA3-50B35D5428A3"}
+ * @AllowToRunInFind
  */
 function REC_on_select(event, vlName)
 {
@@ -29,7 +30,7 @@ function REC_on_select(event, vlName)
 	var results = forms[formName].foundset.search()
 	
 	if (results) {
-		forms[formName].foundset.sort('order_by asc')
+		forms[formName].foundset.sort('valuelist_name asc, relation_1 asc, relation_2 asc, order_by asc')
 	}
 	
 	if (highlight) {

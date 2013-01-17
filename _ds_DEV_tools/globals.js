@@ -1,39 +1,55 @@
 /**
+ * @type {String}
+ *
  * @properties={typeid:35,uuid:"5f3ab9ad-ae76-42f9-832a-7f142065daf4"}
  */
 var DEV_designbar_engine = '';
 
 /**
+ * @type {String}
+ *
  * @properties={typeid:35,uuid:"a2205ea2-0751-445b-a50e-877c6dfd0236"}
  */
 var DEV_designbar_engine_button = '';
 
 /**
+ * @type {Number}
+ *
  * @properties={typeid:35,uuid:"89d297ad-447c-4dea-9fbf-1c9f341da002",variableType:4}
  */
 var DEV_filter_task = 1;
 
 /**
+ * @type {String}
+ *
  * @properties={typeid:35,uuid:"1cda9c06-4302-4631-af5b-d497e615a541"}
  */
 var DEV_help_description = '';
 
 /**
+ * @type {String}
+ *
  * @properties={typeid:35,uuid:"73a74178-dcf6-494b-8779-e3a659dbd72a"}
  */
 var DEV_html_global = '';
 
 /**
+ * @type {Number}
+ *
  * @properties={typeid:35,uuid:"b232f3ba-5a33-4fb2-b0f6-5d0b642fa71d",variableType:4}
  */
 var DEV_P_all;
 
 /**
+ * @type {String}
+ *
  * @properties={typeid:35,uuid:"817e167c-5549-43b8-b0f1-b03cb3c9fca0"}
  */
 var DEV_P_navigation = '';
 
 /**
+ * @type {String}
+ *
  * @properties={typeid:35,uuid:"d51af929-dcde-4fd5-bf34-9bc896d49a86"}
  */
 var DEV_today = '';
@@ -692,7 +708,7 @@ if (application.__parent__.solutionPrefs) {
 				globals.PROTO_quick_buttons(formName,workflowName,listName,workflowNameStd,stayThere)
 			}
 			else {
-				plugins.dialogs.showErrorDialog(
+				globals.DIALOGS.showErrorDialog(
 								'Prototyper error',
 								'Prototyper is not available. Please check your license key'
 							)
@@ -868,7 +884,7 @@ if (proceed) {
 }
 //something went wrong with validation, show error
 else {
-	plugins.dialogs.showErrorDialog(
+	globals.DIALOGS.showErrorDialog(
 					'Validation error',
 					'Get message to input here'
 				)
@@ -989,6 +1005,7 @@ else {
 /**
  *
  * @properties={typeid:24,uuid:"660e5b08-c1f4-4843-a444-41f27a064304"}
+ * @AllowToRunInFind
  */
 function DEV_rebuild_navitem()
 {

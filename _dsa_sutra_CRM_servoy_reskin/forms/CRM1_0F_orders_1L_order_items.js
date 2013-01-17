@@ -1,6 +1,7 @@
 /**
  *
  * @properties={typeid:24,uuid:"6fdd8c88-818b-4543-a637-e7c91f625cc0"}
+ * @AllowToRunInFind
  */
 function EDIT_order_item()
 {
@@ -32,7 +33,7 @@ forms.CRM_P_order_items.orderitem_id = orderItemID
 forms.CRM_P_order_items.controller.search()
 
 //show form in dialog
-globals.CODE_form_in_dialog(forms.CRM_P_order_items,-1,-1,-1,-1,'Edit',false,false,false,'crm1OrderItem')
+globals.CODE_form_in_dialog(forms.CRM_P_order_items,-1,-1,-1,-1,'Edit',false,false,'crmOrderItem')
 }
 
 /**
@@ -61,7 +62,7 @@ function REC_delete()
  *			  	
  */
 
-var delRec = plugins.dialogs.showWarningDialog(
+var delRec = globals.DIALOGS.showWarningDialog(
 				'Delete record',
 				'Do you really want to delete this order item?',
 				'Yes',

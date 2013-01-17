@@ -74,6 +74,7 @@ ACTION_toggle_detail()
 /**
  *
  * @properties={typeid:24,uuid:"0116e281-95fc-4309-9c9f-c02dcc1d1a57"}
+ * @AllowToRunInFind
  */
 function FX_flag_invalid()
 {
@@ -156,6 +157,7 @@ for ( var i = 0 ; i < selectedSet.getSize() ; i++ ) {
 /**
  *
  * @properties={typeid:24,uuid:"18df2975-cc26-4ce8-9d37-16919fb3c24c"}
+ * @AllowToRunInFind
  */
 function REC_new()
 {

@@ -1,6 +1,7 @@
 /**
  *
  * @properties={typeid:24,uuid:"eb69ea23-fea2-43e0-a63d-1748c1bc1cb3"}
+ * @AllowToRunInFind
  */
 function FLD_data_change__action_id()
 {
@@ -32,7 +33,7 @@ fsAction.action_id = action_id
 var results = fsAction.search()
 
 if (results > 1) {
-	plugins.dialogs.showErrorDialog('Error','The action registry ID must be unique.  Please enter a new ID.')
+	globals.DIALOGS.showErrorDialog('Error','The action registry ID must be unique.  Please enter a new ID.')
 	action_id = null
 	elements.fld_action_id.requestFocus(false)
 }
@@ -64,7 +65,7 @@ function REC_delete()
  *			  	
  */
 
-var delRec = plugins.dialogs.showWarningDialog('Delete record','Do you really want to delete the selected action?','Yes','No')
+var delRec = globals.DIALOGS.showWarningDialog('Delete record','Do you really want to delete the selected action?','Yes','No')
 
 if (delRec == 'Yes') {
 	controller.deleteRecord()

@@ -1,6 +1,7 @@
 /**
  *
  * @properties={typeid:24,uuid:"323cb69f-2260-4e64-a310-3eed4cbbe67d"}
+ * @AllowToRunInFind
  */
 function FILTER_find_fields()
 {
@@ -135,6 +136,7 @@ FILTER_find_fields()
 /**
  *
  * @properties={typeid:24,uuid:"1289adc6-3c4b-40ea-b163-5bf68a16daca"}
+ * @AllowToRunInFind
  */
 function REFRESH_columns()
 {
@@ -164,6 +166,27 @@ var relnName = 'nav_navigation_item_to_column'
 var colFormName = 'NAV_0F_navigation_item_1F_column__fastfind_2L__right'
 var navItem = forms.NAV_0F_navigation_item.id_navigation_item
 
+//hard refresh of columns
+if (globals.CODE_key_pressed('shift')) {
+	forms[colFormName].foundset.find()
+	forms[colFormName].foundset.id_navigation_item = navItem
+	var results = forms[colFormName].foundset.search()
+	
+	if (results) {
+		var input = globals.DIALOGS.showQuestionDialog(
+					'Delete all columns?',
+					'Do you need to do a hard refresh?\nYou will need to reconfigure fast finds and power replaces.',
+					'Yes',
+					'No'
+			)
+		
+		if (input == 'Yes') {
+			forms[colFormName].foundset.deleteAllRecords()
+			var hardRefresh = true
+		}
+	}
+}
+
 if (globals.NAV_find_relation != '-') {
 	
 	//find all columns based on selected relation/table and navItem
@@ -175,7 +198,7 @@ if (globals.NAV_find_relation != '-') {
 	
 	//ask to refresh if records already exist
 	if (results) {
-		var newRecs = plugins.dialogs.showQuestionDialog('Get columns','Do you want to refresh the columns','Yes','No')
+		var newRecs = globals.DIALOGS.showQuestionDialog('Get columns','Do you want to refresh the columns','Yes','No')
 	}
 	else {
 		var newRecs = 'Yes'
@@ -189,7 +212,7 @@ if (globals.NAV_find_relation != '-') {
 		
 		//check if form_to_load is a valid entry
 		if (!forms[formLoad]) {
-			plugins.dialogs.showErrorDialog('Form missing','The selected form to load does not exist in this solution','OK')
+			globals.DIALOGS.showErrorDialog('Form missing','The selected form to load does not exist in this solution','OK')
 			return
 		}
 		else {
@@ -355,6 +378,10 @@ if (globals.NAV_find_relation != '-') {
 			if (results) {
 				forms[colFormName].controller.sort('name_column asc')
 				forms[colFormName].controller.setSelectedIndex(1)
+			}
+			
+			if (hardRefresh) {
+				globals.DIALOGS.showInfoDialog('Hard refresh','Columns have been deleted.\nPlease reconfigure fast finds now.')
 			}
 		}
 	}

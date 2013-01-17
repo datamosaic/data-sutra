@@ -1,6 +1,7 @@
 /**
  *
  * @properties={typeid:24,uuid:"c5b87264-279f-4ce5-82af-751dcb970294"}
+ * @AllowToRunInFind
  */
 function ACTION_activate()
 {
@@ -62,6 +63,7 @@ function ACTION_edit()
 /**
  *
  * @properties={typeid:24,uuid:"34973f32-e732-43f9-a228-013e74266328"}
+ * @AllowToRunInFind
  */
 function ACTION_title()
 {
@@ -282,7 +284,7 @@ var relnName = 'nav_list_display_to_navigation_item'
 var fsListDisplay = forms.DEV_0L_list_display.foundset
 
 if (utils.hasRecords(fsListDisplay)) {
-	var delRec = plugins.dialogs.showWarningDialog(
+	var delRec = globals.DIALOGS.showWarningDialog(
 					'Delete record',
 					'Do you really want to delete this record?',
 					'Yes',
@@ -314,7 +316,7 @@ if (utils.hasRecords(fsListDisplay)) {
 	}
 }
 else {
-	plugins.dialogs.showErrorDialog(
+	globals.DIALOGS.showErrorDialog(
 			'Delete error',
 			'There are no records to delete'
 		)

@@ -60,7 +60,7 @@ var addrCnt = crm_orders_company_to_addresses.getSize()
 var contCnt = crm_order_company_to_contacts.getSize()
 
 if (addrCnt && contCnt) {
-	var record = forms.CRM2_0F_companies.crm_companies_to_orders.getRecord(forms.CRM2_0F_companies.crm_companies_to_orders.newRecord(false,true))
+	var record = foundset.getRecord(foundset.newRecord(false,true))
 	
 	//do the auto-enter stuff
 	//set the next order number
@@ -82,12 +82,12 @@ if (addrCnt && contCnt) {
 	//change the selected navigation record
 	GOTO_order()
 	
-	forms.CRM2_0F_orders.foundset.selectRecord(record.order_id)
+//	forms.CRM2_0F_orders.foundset.selectRecord(record.order_id)
 	forms.CRM2_0F_orders.elements.fld_order_number.requestFocus(false)
 }
 else if (addrCnt == 0) {
 	//show error
-	plugins.dialogs.showErrorDialog(
+	globals.DIALOGS.showErrorDialog(
 					'Missing address',
 					'There needs to be at least one address defined for this customer before you can create an order.',
 					'OK')
@@ -96,11 +96,26 @@ else if (addrCnt == 0) {
 }
 else if (contCnt == 0) {
 	//show error
-	plugins.dialogs.showErrorDialog(
+	globals.DIALOGS.showErrorDialog(
 					'Missing contact',
 					'There needs to be at least one contact defined for this customer before you can create an order.',
 					'OK')
 	//contact tab
 	globals.TAB_change_grid('CRM2_0F_companies_1L_orders','tab_d1')
 }
+}
+
+/**
+ * Called before the form component is rendered.
+ *
+ * @param {JSRenderEvent} event the render event
+ *
+ * @properties={typeid:24,uuid:"1AF3C75B-8F29-4459-AB40-59DA6DD72BEE"}
+ */
+function FLD_paid_display__on_render(event) {
+	if (event.getRecord() && event.getRecord().is_paid) {
+		event.getRenderable().fgcolor = '#009900';
+	} else {
+		event.getRenderable().fgcolor = '#cc0000';
+	}
 }

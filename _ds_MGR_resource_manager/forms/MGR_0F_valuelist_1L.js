@@ -25,7 +25,7 @@ function REC_delete()
  */
 
 	if (foundset.getSize() == 1) {
-		var delRec = plugins.dialogs.showWarningDialog(
+		var delRec = globals.DIALOGS.showWarningDialog(
 					'Delete valuelist',
 					'This is the last valuelist item.  Do you want to delete the valuelist?',
 					'Yes',
@@ -33,7 +33,7 @@ function REC_delete()
 				)
 	}
 	else {
-		var delRec = plugins.dialogs.showWarningDialog(
+		var delRec = globals.DIALOGS.showWarningDialog(
 					'Delete record',
 					'Do you really want to delete the selected valuelist item?',
 					'Yes',
@@ -43,7 +43,7 @@ function REC_delete()
 	
 	if (delRec == 'Yes') {
 		//what record selected?
-		var selectedRec = foundset.getRecord(selectedIndex)
+		var selectedRec = foundset.getSelectedRecord()
 		var selectedValue = (selectedRec.saved) ? selectedRec.saved : selectedRec.visible
 		var nameVL = selectedRec.valuelist_name
 		
@@ -61,7 +61,7 @@ function REC_delete()
 			}
 		}
 		
-		controller.deleteRecord()
+		foundset.deleteRecord(selectedRec)
 		i--
 		
 		//continue looping through foundset and delete any child records
@@ -130,6 +130,7 @@ function REC_duplicate()
 
 /**
  * @properties={typeid:24,uuid:"4131AC4A-845A-4838-9541-E5893B712D80"}
+ * @AllowToRunInFind
  */
 function REC_new_sub() {
 	var selectedIndex = foundset.getSelectedIndex()
@@ -240,6 +241,7 @@ function DIR_down(event) {
  * @param {JSEvent} event the event that triggered the action
  *
  * @properties={typeid:24,uuid:"96D7FD13-86E3-4CD7-B501-66C9E738EF9D"}
+ * @AllowToRunInFind
  */
 function PICK_relation_1(event) {
 	//fill valuelist with all "parent" options
@@ -311,4 +313,24 @@ function PICK_relation_1(event) {
  */
 function REC_on_select(event) {
 
+}
+
+/**
+ * Perform sort.
+ *
+ * @param {String} dataProviderID element data provider
+ * @param {Boolean} asc sort ascending [true] or descending [false]
+ * @param {JSEvent} event the event that triggered the action
+ *
+ * @properties={typeid:24,uuid:"D6579C74-BE01-4554-BDA2-2D44CC2B8FF3"}
+ */
+function SORT(dataProviderID, asc, event) {
+	if (dataProviderID == 'order_by' || dataProviderID == 'relation_1') {
+		var sortFields = ['valuelist_name','relation_1','relation_2','order_by']
+		var sortString = sortFields.map(function(item) {return item + (asc ? ' asc' : ' desc')}).join(', ')
+		controller.sort(sortString)
+	}
+	else {
+		controller.sort(dataProviderID + (asc ? ' asc' : ' desc'), false)
+	}
 }

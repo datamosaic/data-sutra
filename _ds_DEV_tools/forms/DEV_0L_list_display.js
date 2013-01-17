@@ -162,7 +162,7 @@ if (display_default) {
 }
 else {
 	display_default = 1
-	plugins.dialogs.showErrorDialog(
+	globals.DIALOGS.showErrorDialog(
 				'Missing default display', 
 				'There must be a default display when using the universal list', 
 				'OK'
@@ -175,6 +175,7 @@ databaseManager.saveData()
 /**
  *
  * @properties={typeid:24,uuid:"42f61a14-1715-4e33-83f8-ceae4a6d8ebf"}
+ * @AllowToRunInFind
  */
 function GET_record()
 {

@@ -1,6 +1,7 @@
 /**
  *
  * @properties={typeid:24,uuid:"2e0234f4-4b9f-4481-82f4-6c3a542ffc11"}
+ * @AllowToRunInFind
  */
 function FILTER_find_fields()
 {
@@ -53,6 +54,7 @@ if (forms.NAV_P_column) {
 /**
  *
  * @properties={typeid:24,uuid:"8c93f16c-4c2c-4033-b93b-f91f1b2600b6"}
+ * @AllowToRunInFind
  */
 function REFRESH_columns()
 {
@@ -82,6 +84,27 @@ var relnName = 'nav_navigation_item_to_column'
 var colFormName = 'NAV_0F_navigation_item_1F__universal_lists_2F_list_display__right_3L_column'
 var navItem = forms[formName].id_navigation_item
 
+//hard refresh of columns
+if (globals.CODE_key_pressed('shift')) {
+	forms[colFormName].foundset.find()
+	forms[colFormName].foundset.id_navigation_item = navItem
+	var results = forms[colFormName].foundset.search()
+	
+	if (results) {
+		var input = globals.DIALOGS.showQuestionDialog(
+					'Delete all columns?',
+					'Do you need to do a hard refresh?\nYou will need to reconfigure fast finds and power replaces.',
+					'Yes',
+					'No'
+			)
+		
+		if (input == 'Yes') {
+			forms[colFormName].foundset.deleteAllRecords()
+			var hardRefresh = true
+		}
+	}
+}
+
 if (globals.NAV_column_relation != '-') {
 	
 	//find all columns based on selected relation/table and navItem
@@ -93,7 +116,7 @@ if (globals.NAV_column_relation != '-') {
 	
 	//ask to refresh if records already exist
 	if (results) {
-		var newRecs = plugins.dialogs.showQuestionDialog('Get columns','Do you want to refresh the columns','Yes','No')
+		var newRecs = globals.DIALOGS.showQuestionDialog('Get columns','Do you want to refresh the columns','Yes','No')
 	}
 	else {
 		var newRecs = 'Yes'
@@ -107,7 +130,7 @@ if (globals.NAV_column_relation != '-') {
 		
 		//check if form_to_load is a valid entry
 		if (!forms[formLoad]) {
-			plugins.dialogs.showErrorDialog('Form missing','The selected form to load does not exist in this solution','OK')
+			globals.DIALOGS.showErrorDialog('Form missing','The selected form to load does not exist in this solution','OK')
 			return
 		}
 		else {
@@ -147,9 +170,9 @@ if (globals.NAV_column_relation != '-') {
 			var columnNamesStored = new Array()
 			
 			//check to see if there are already some records
-			var results = forms[colFormName].controller.getMaxRecordIndex()
+			var results = forms[colFormName].foundset.getSize()
 			if (results) {
-				for (var i = 0 ; i < forms[colFormName].controller.getMaxRecordIndex() ; i++) {
+				for (var i = 0 ; i < forms[colFormName].foundset.getSize() ; i++) {
 					var columnInfo = new Object()
 					
 					var record = forms[colFormName].foundset.getRecord(i+1)
@@ -240,12 +263,12 @@ if (globals.NAV_column_relation != '-') {
 						}
 						//columnName not in columnNameStored, so add to sutra_column
 						else {
-							forms[colFormName].controller.newRecord(false,true)
-							forms[colFormName].name_column = colName
-							forms[colFormName].type_column = colType
-							forms[colFormName].id_navigation_item = navItem
-							forms[colFormName].table_or_relation = tableReln
-							forms[colFormName].status_relation = statusReln
+							forms[colFormName].foundset.newRecord(false,true)
+							forms[colFormName].foundset.name_column = colName
+							forms[colFormName].foundset.type_column = colType
+							forms[colFormName].foundset.id_navigation_item = navItem
+							forms[colFormName].foundset.table_or_relation = tableReln
+							forms[colFormName].foundset.status_relation = statusReln
 						}
 					}
 				} //end "smart update"
@@ -272,6 +295,10 @@ if (globals.NAV_column_relation != '-') {
 			if (results) {
 				forms[colFormName].controller.sort('name_column asc')
 				forms[colFormName].controller.setSelectedIndex(1)
+			}
+			
+			if (hardRefresh) {
+				globals.DIALOGS.showInfoDialog('Hard refresh','Columns have been deleted.\nPlease reconfigure fast finds now.')
 			}
 		}
 	}

@@ -2,32 +2,11 @@
  *
  * @properties={typeid:24,uuid:"1b6df4e4-d010-4748-ae4f-3396695a7b5e"}
  */
-function FORM_on_show()
+function FORM_on_show(firstShow, event)
 {
-
-/*
- *	TITLE    :	FORM_on_show
- *			  	
- *	MODULE   :	start_CRM_mosaic
- *			  	
- *	ABOUT    :	hides the default highlighter object
- *			  	
- *	INPUT    :	
- *			  	
- *	OUTPUT   :	
- *			  	
- *	REQUIRES :	
- *			  	
- *	USAGE    :	FORM_on_show()
- *			  	
- *	MODIFIED :	July 31, 2008 -- Troy Elliott, Data Mosaic
- *			  	
- */
-
-//hide field highlighter
-globals.CODE_highlight_off('CRM2_0F_products')
-
-
+	if (scopes.NT) {
+		scopes.NT.sidebarSet(event)
+	}
 }
 
 /**
@@ -56,7 +35,7 @@ function REC_delete()
  *			  	
  */
 
-var delRec = plugins.dialogs.showWarningDialog(
+var delRec = globals.DIALOGS.showWarningDialog(
 				'Delete record',
 				'Do you really want to delete this product?',
 				'Yes',
@@ -143,7 +122,7 @@ elements.fld_product_number.requestFocus(false)
  *
  * @properties={typeid:24,uuid:"5cd792d4-d344-4a3b-94ef-e93abf88e8df"}
  */
-function REC_on_select()
+function REC_on_select(event)
 {
 
 /*
@@ -177,5 +156,8 @@ else*/ if (!product_image) {
 else {
 	elements.lbl_imagePreview.text = ''
 	elements.lbl_imagePreview.visible = false
+}
+if (scopes.NT) {
+	scopes.NT.sidebarSet(event)
 }
 }

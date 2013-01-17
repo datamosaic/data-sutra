@@ -95,6 +95,7 @@ globals.TAB_change_grid_init()
 /**
  *
  * @properties={typeid:24,uuid:"305fa2e0-3da7-4fc9-b18f-43cdc4391e39"}
+ * @AllowToRunInFind
  */
 function FORM_on_show()
 {
@@ -202,7 +203,7 @@ function FOUNDSET_update_record()
  *			  	
  */
 
-var dialog = plugins.dialogs.showQuestionDialog('Update foundset','Do you want to update all records in foundset with the login options of the selected user?','Yes','No')
+var dialog = globals.DIALOGS.showQuestionDialog('Update foundset','Do you want to update all records in foundset with the login options of the selected user?','Yes','No')
 
 if (dialog == 'Yes') {
 	var navSet = ac_access_group_to_access_user.login_nav_set
@@ -247,7 +248,7 @@ function REC_delete()
  */
 
 
-var delRec = plugins.dialogs.showWarningDialog('Delete record','Do you really want to delete this record?','Yes','No')
+var delRec = globals.DIALOGS.showWarningDialog('Delete record','Do you really want to delete this record?','Yes','No')
 
 if (delRec == 'Yes') {
 	controller.deleteRecord()
@@ -291,6 +292,7 @@ elements.fld_group_name.requestFocus(false)
 /**
  *
  * @properties={typeid:24,uuid:"2d1e3d7e-6263-41f3-8359-0c80cd39bb39"}
+ * @AllowToRunInFind
  */
 function REC_on_select()
 {

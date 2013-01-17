@@ -2,32 +2,11 @@
  *
  * @properties={typeid:24,uuid:"4b9d5a7f-3696-462e-b0d6-1e0ba6248a05"}
  */
-function FORM_on_show()
+function FORM_on_show(firstShow, event)
 {
-
-/*
- *	TITLE    :	FORM_on_show
- *			  	
- *	MODULE   :	start_CRM_mosaic
- *			  	
- *	ABOUT    :	hides the default highlighter object
- *			  	
- *	INPUT    :	
- *			  	
- *	OUTPUT   :	
- *			  	
- *	REQUIRES :	
- *			  	
- *	USAGE    :	FORM_on_show()
- *			  	
- *	MODIFIED :	July 31, 2008 -- Troy Elliott, Data Mosaic
- *			  	
- */
-
-//hide field highlighter
-globals.CODE_highlight_off('CRM2_0F_contacts')
-
-
+	if (scopes.NT) {
+		scopes.NT.sidebarSet(event)
+	}
 }
 
 /**
@@ -56,7 +35,7 @@ function REC_delete()
  *			  	
  */
 
-var delRec = plugins.dialogs.showWarningDialog(
+var delRec = globals.DIALOGS.showWarningDialog(
 				'Delete record',
 				'Do you really want to delete this contact?',
 				'Yes',
@@ -97,7 +76,7 @@ function REC_duplicate()
  *			  	
  */
 
-controller.duplicateRecord(false)
+controller.duplicateRecord()
 globals.TRIGGER_ul_refresh_all()
 }
 
@@ -164,11 +143,11 @@ function STATUS_adjust()
  */
 
 if (utils.hasRecords(foundset)) {
-	var newStatus = plugins.dialogs.showSelectDialog(
+	var newStatus = globals.DIALOGS.showSelectDialog(
 						'Change contact status',
 						'Please set the contact status',
-						'Active',
-						'Inactive'
+						['Active',
+						'Inactive']
 					)
 	
 	if (newStatus == 'Active') {
@@ -178,4 +157,38 @@ if (utils.hasRecords(foundset)) {
 		is_active = 0
 	}
 }
+}
+
+/**
+ * @properties={typeid:24,uuid:"8D02DA83-E811-4B69-BA4A-6C0A5C75A851"}
+ */
+function EDIT_start() {
+	plugins.WebClientUtils.executeClientSideJS('alert("Start");')
+}
+
+/**
+ * @properties={typeid:24,uuid:"47CFB21C-3A72-4A2A-88B4-AC276543850F"}
+ */
+function EDIT_cancel() {
+	plugins.WebClientUtils.executeClientSideJS('alert("Cancelled");')
+}
+
+/**
+ * @properties={typeid:24,uuid:"BE914001-2FE7-48AA-81C9-358B87B59394"}
+ */
+function EDIT_save() {
+	plugins.WebClientUtils.executeClientSideJS('alert("Saved");')
+}
+
+/**
+ * Handle record selected.
+ *
+ * @param {JSEvent} event the event that triggered the action
+ *
+ * @properties={typeid:24,uuid:"A4B842E9-8B1F-45B2-8CBB-6F9056D897FA"}
+ */
+function REC_on_select(event) {
+	if (scopes.NT) {
+		scopes.NT.sidebarSet(event)
+	}
 }

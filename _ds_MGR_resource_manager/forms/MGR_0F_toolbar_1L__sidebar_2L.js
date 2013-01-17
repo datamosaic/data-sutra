@@ -113,7 +113,7 @@ function REC_delete()
  *			  	
  */
 
-var delRec = plugins.dialogs.showWarningDialog('Delete record','Do you really want to delete this sidebar?','Yes','No')
+var delRec = globals.DIALOGS.showWarningDialog('Delete record','Do you really want to delete this sidebar?','Yes','No')
 if (delRec == 'Yes') {
 	var recSelect = controller.getSelectedIndex()
 	
@@ -142,6 +142,7 @@ if (delRec == 'Yes') {
  * @returns {Boolean}
  *
  * @properties={typeid:24,uuid:"429B31A1-7F20-4AB4-B7F2-61524CB8BCDB"}
+ * @AllowToRunInFind
  */
 function FLD_tab_name__data_change(oldValue, newValue, event) {
 	var fsDupe = databaseManager.getFoundSet('sutra','sutra_toolbar')
@@ -152,7 +153,7 @@ function FLD_tab_name__data_change(oldValue, newValue, event) {
 	var results = fsDupe.search()
 	
 	if (results > 1) {
-		plugins.dialogs.showErrorDialog(
+		globals.DIALOGS.showErrorDialog(
 					'Error',
 					'The registry must be unique'
 			)

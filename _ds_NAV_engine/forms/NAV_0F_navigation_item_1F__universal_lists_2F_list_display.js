@@ -75,6 +75,7 @@ else {
 /**
  *
  * @properties={typeid:24,uuid:"3cce2ea1-d726-43f2-8f43-221122fc3cb9"}
+ * @AllowToRunInFind
  */
 function FILTER_find_fields()
 {
@@ -156,8 +157,14 @@ globals.TRIGGER_tooltip_set()
 
 
 // troy's stuff. looks like a hack to me!
-ACTION_toggle_detail()
-ACTION_toggle_detail()
+if (solutionPrefs.config.webClient) {
+	elements.btn_detail_left.visible = false
+	elements.btn_detail_right.visible = false
+}
+else {
+	ACTION_toggle_detail()
+	ACTION_toggle_detail()
+}
 }
 
 /**
@@ -173,6 +180,7 @@ forms.NAV_0F_navigation_item_1F__universal_lists_2F_list_display__right.FILTER_f
 /**
  *
  * @properties={typeid:24,uuid:"7a5e97ca-a959-4f0f-8459-50b01befb8dd"}
+ * @AllowToRunInFind
  */
 function POPUP_field_chooser()
 {
@@ -202,7 +210,7 @@ var formName = application.getMethodTriggerFormName()
 var relationName = 'nav_list_display_to_list_display_item'
 
 
-var delRec = plugins.dialogs.showWarningDialog('Delete record','Do you really want to delete this record?','Yes','No')
+var delRec = globals.DIALOGS.showWarningDialog('Delete record','Do you really want to delete this record?','Yes','No')
 if (delRec == 'Yes') {
 	var recSelect = forms[formName][relationName].getSelectedIndex()
 
@@ -223,7 +231,7 @@ if (delRec == 'Yes') {
 
 var formName = 'NAV_0F_navigation_item_1F__universal_lists_2F_list_display__left_3L_list_display_item'
 
-var delRec = plugins.dialogs.showWarningDialog('Delete record','Do you really want to delete this record?','Yes','No')
+var delRec = globals.DIALOGS.showWarningDialog('Delete record','Do you really want to delete this record?','Yes','No')
 if (delRec == 'Yes') {
 	var recSelect = forms[formName].controller.getSelectedIndex()
 
@@ -295,6 +303,7 @@ else {
 /**
  *
  * @properties={typeid:24,uuid:"ef05c919-781f-4f00-8aa9-97364c31aedb"}
+ * @AllowToRunInFind
  */
 function REFRESH_columns()
 {
@@ -335,7 +344,7 @@ if (globals.NAV_column_relation != '-') {
 	
 	//ask to refresh if records already exist
 	if (results) {
-		var newRecs = plugins.dialogs.showQuestionDialog('Get columns','Do you want to refresh the columns','Yes','No')
+		var newRecs = globals.DIALOGS.showQuestionDialog('Get columns','Do you want to refresh the columns','Yes','No')
 	}
 	else {
 		var newRecs = 'Yes'
@@ -349,7 +358,7 @@ if (globals.NAV_column_relation != '-') {
 		
 		//check if form_to_load is a valid entry
 		if (!forms[formLoad]) {
-			plugins.dialogs.showErrorDialog('Form missing','The selected form to load does not exist in this solution','OK')
+			globals.DIALOGS.showErrorDialog('Form missing','The selected form to load does not exist in this solution','OK')
 			return
 		}
 		else {

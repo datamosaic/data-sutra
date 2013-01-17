@@ -136,3 +136,87 @@ for ( var i = 1; i <= max ; i++ ) {
 	}
 }
 }
+
+/**
+ * Update registry actions
+ *
+ * @param {JSEvent} event
+ *
+ * @properties={typeid:24,uuid:"59BAA793-4171-4C9F-9737-67B7A226A477"}
+ * @AllowToRunInFind
+ */
+function REGISTRY_update(event) {
+	//fs for actions registry
+	/** @type {JSFoundSet<db:/sutra/sutra_access_action>} */
+	var fsRegistry = databaseManager.getFoundSet('db:/sutra/sutra_access_action')
+	var recRegistry
+	
+	
+	//loop over all scopes to get all identifiers
+	var allIDs = new Array()
+	for (var i in scopes) {
+		if (i != 'globals') {
+			allIDs.push(i)
+		}
+	}
+	//check all scopes for init method
+	for (var h = 0; h < allIDs.length; h++) {
+		var id = allIDs[h]
+		var myApp = null
+		
+		//check in named scope
+		if (scopes[id] && scopes[id].init && scopes[id].init.items instanceof Array && scopes[id].init.name) {
+			myApp = scopes[id].init
+		}
+		//check in global scope
+		else if (globals[id] && globals[id].init && globals[id].init.items instanceof Array && globals[id].init.name) {
+			myApp = globals[id].init
+		}
+		
+		//there is an app and it has length
+		if (myApp && myApp.items.length) {
+			//flag that need to reload records
+			var refresh = true
+			
+			/**
+		  	 * @type {Object[]}
+			 */
+			var registryItems = myApp.items
+			
+			for (var i = 0; i < registryItems.length; i++) {
+				/**
+				 * @type {{name: String, registry: String, description: String, uuid: UUID}}
+				 */
+				var registryItem = registryItems[i]
+				
+				fsRegistry.find()
+				//TODO: flip around to uuids
+				fsRegistry.action_id = registryItem.registry
+				var results = fsRegistry.search()
+				
+				//we have a registry already, smart update
+				if (results == 1) {
+					recRegistry = fsRegistry.getSelectedRecord()
+				}
+				//create a new one
+				else {
+					recRegistry = fsRegistry.getRecord(fsRegistry.newRecord())
+				}
+				
+				//punch in new data points
+				recRegistry.action_name = registryItem.name
+				recRegistry.action_id = registryItem.registry
+				recRegistry.action_uuid = registryItem.uuid
+				recRegistry.description = registryItem.description
+				
+				databaseManager.saveData(recRegistry)
+			}
+		}
+	}
+	
+	//clear out filters and load all records
+	if (refresh) {
+		forms.AC_0F_solution__workflow_1F_action_2L__filter.FILTER_clear()
+		forms.AC_0F_solution__workflow_1F_action_2L.controller.sort('action_id asc')
+	}
+}

@@ -185,7 +185,7 @@ if (application.__parent__.solutionPrefs) {
 		//}
 	}
 	else {
-		plugins.dialogs.showInfoDialog('Config incomplete', 'Return to navigation setup to complete this action', 'OK')
+		globals.DIALOGS.showInfoDialog('Config incomplete', 'Return to navigation setup to complete this action', 'OK')
 	}
 	
 	//LOG ul action
@@ -765,6 +765,7 @@ if (menuMain.length) {
 /**
  *
  * @properties={typeid:24,uuid:"d4d7a728-5bb1-41fc-90ac-ccf0f16da36e"}
+ * @AllowToRunInFind
  */
 function FILTERS_list_control()
 {
@@ -952,7 +953,7 @@ if (filters.length) {
 	else {
 		forms[formName].controller.loadRecords(origFoundset)
 		UL_fill_data()
-		plugins.dialogs.showInfoDialog('No records found','No records found while filtering ' + filterTitle + '.')
+		globals.DIALOGS.showInfoDialog('No records found','No records found while filtering ' + filterTitle + '.')
 	}
 	
 	//LOG ul filter
@@ -1446,7 +1447,7 @@ if (application.__parent__.solutionPrefs) {
 			eval(methods)
 		}
 		else {
-			plugins.dialogs.showInfoDialog('Config incomplete', 'Return to navigation setup to complete this action', 'OK')
+			globals.DIALOGS.showInfoDialog('Config incomplete', 'Return to navigation setup to complete this action', 'OK')
 		}
 	}
 	//execute default record add
@@ -1491,6 +1492,7 @@ if (application.__parent__.solutionPrefs) {
 /**
  *
  * @properties={typeid:24,uuid:"b06dca24-2e45-4888-8e7b-444c71ffe6cc"}
+ * @AllowToRunInFind
  */
 function REPORTS_list()
 {
@@ -1633,7 +1635,7 @@ var navItemForm = solutionPrefs.config.currentFormName
 //prompt for how many records to print
 if (wrapper) {
 	if (navItemForm && forms[navItemForm] && utils.hasRecords(forms[navItemForm].foundset)) {
-		var whatPrint = plugins.dialogs.showQuestionDialog(
+		var whatPrint = globals.DIALOGS.showQuestionDialog(
 						'Print report',
 						'How many records do you want to print?',
 						'Selected record',
@@ -1669,7 +1671,7 @@ if (wrapper) {
 		}
 	}
 	else {
-		plugins.dialogs.showErrorDialog(
+		globals.DIALOGS.showErrorDialog(
 				'Print error',
 				'There are no records to print'
 			)

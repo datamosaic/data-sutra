@@ -1,6 +1,7 @@
 /**
  *
  * @properties={typeid:24,uuid:"e6b7facc-cd3d-4ca1-8111-3fafa881efb9"}
+ * @AllowToRunInFind
  */
 function ACTION_activate()
 {
@@ -88,14 +89,14 @@ var results = forms[formName].GET_action_record()
 
 //disable adding a method to a divider
 if (forms[formName].menu_name && (forms[formName].menu_name == '-' || utils.stringPatternCount(forms[formName].menu_name, '---') > 0)) {
-	plugins.dialogs.showErrorDialog(
+	globals.DIALOGS.showErrorDialog(
 					'Divider error',
 					'You cannot assign code to a divider'
 				)
 }
 //check if it is possible to assign a method
 else if (!forms[formName].menu_name) {
-	plugins.dialogs.showErrorDialog(
+	globals.DIALOGS.showErrorDialog(
 				'Error',
 				'You must create and name a menu item first',
 				'OK'
@@ -289,7 +290,7 @@ function REC_delete()
 {
 
 
-var delRec = plugins.dialogs.showWarningDialog(
+var delRec = globals.DIALOGS.showWarningDialog(
 					'Delete record',
 					'Do you really want to delete this record?',
 					'Yes',
@@ -321,6 +322,7 @@ if (delRec == 'Yes') {
 /**
  *
  * @properties={typeid:24,uuid:"08e73def-9a3f-4839-ada8-cbafe8ec3cc0"}
+ * @AllowToRunInFind
  */
 function REC_edit()
 {

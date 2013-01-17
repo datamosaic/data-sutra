@@ -25,12 +25,8 @@ function ACTION_continue()
  */
 
 var baseForm = solutionPrefs.config.formNameBase
-var navigationList = 'NAV__navigation_tree'
-
-//reset wrapper bean 2 to show header
-forms[baseForm].elements.bean_wrapper_2.topComponent = forms[baseForm].elements.bean_header
-application.updateUI()
-forms[baseForm].elements.bean_wrapper_2.dividerLocation = 44
+var navigationList = (solutionPrefs.config.webClient) ? 'NAV__navigation_tree__WEB' : 'NAV__navigation_tree'
+var navTabPanel = (solutionPrefs.config.webClient) ? forms.DATASUTRA_WEB_0F__list.elements.tab_list : forms[baseForm].elements.tab_content_A
 
 //reset loginDisabled flag so that previews will show misc and qotd areas
 delete this.loginDisabled
@@ -41,7 +37,7 @@ if (application.__parent__.navigationPrefs) {
 	
 	//no default selected, choose the first non-config layout
 	if (!defaultNavSet) {
-		plugins.dialogs.showErrorDialog(
+		globals.DIALOGS.showErrorDialog(
 					'Error',
 					'No default navigation set defined\nReport to administrator'
 				)
@@ -57,7 +53,7 @@ if (application.__parent__.navigationPrefs) {
 	}
 	
 	//loop through all items in navPrefs and put each form in the main screen except for navigation preference items
-	if (solutionPrefs.config.prefs.formPreload) {
+	if (solutionPrefs.config.prefs.formPreload && !solutionPrefs.config.webClient) {
 		
 		//we are using the transparent way
 		if (solutionPrefs.config.prefs.formPreloadGray) {
@@ -134,7 +130,7 @@ if (application.__parent__.navigationPrefs) {
 	}
 }
 else {
-	plugins.dialogs.showErrorDialog(
+	globals.DIALOGS.showErrorDialog(
 				'Error',
 				'No navigation sets defined\nReport to administrator'
 		)
@@ -146,8 +142,13 @@ else {
 globals.DATASUTRA_navigation_set = defaultNavSet
 
 //load navigation list in
-if (forms[baseForm].elements.tab_content_A.tabIndex > 0) {
-	forms[baseForm].elements.tab_content_A.removeAllTabs()
+if (solutionPrefs.config.webClient) {
+	
+}
+else {
+	if (navTabPanel.tabIndex > 0) {
+		navTabPanel.removeAllTabs()
+	}
 }
 
 //toolbar and sidebar load
@@ -160,7 +161,7 @@ if (solutionPrefs.screenAttrib.sidebar.status) {
 	globals.DS_sidebar_toggle(true,null,true)
 }
 
-if (solutionPrefs.config.prefs.formPreload) {
+if (solutionPrefs.config.prefs.formPreload && !solutionPrefs.config.webClient) {
 	//we are using the transparent way
 	if (solutionPrefs.config.prefs.formPreloadGray) {
 		globals.TRIGGER_progressbar_stop()
@@ -169,8 +170,14 @@ if (solutionPrefs.config.prefs.formPreload) {
 	globals.TRIGGER_interface_lock(false)
 }
 
-//use html based approach for navigation item navigation pane
-forms[baseForm].elements.tab_content_A.addTab(forms[navigationList],'')
+//use solution model based approach for navigation item navigation pane
+if (solutionPrefs.config.webClient) {
+//	navTabPanel.setLeftForm(forms[navigationList])
+	forms.DATASUTRA_WEB_0F__list.FORM_on_show(true)
+}
+else {
+	navTabPanel.addTab(forms[navigationList],'')
+}
 
 //turn all disabled elements back on
 solutionPrefs.config.helpMode = false
@@ -198,6 +205,6 @@ forms[baseForm + '__header'].elements.btn_pref.visible = true
 forms[baseForm + '__header'].elements.btn_fw_action.visible = true
 forms[baseForm + '__footer'].elements.lbl_status.visible = true
 
-
+//globals.DS_router('DSHistory')
 
 }

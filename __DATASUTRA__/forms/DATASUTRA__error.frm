@@ -189,16 +189,15 @@ showFocus:false,
 size:"45,11",
 styleClass:"solutionlogstatus",
 tabSeq:-1,
-text:"3.0",
+text:"4.0",
 toolTipText:"<html>
   <head>
 
   <\/head>
   <body>
-    Data Sutra v3.0<br>Revision 58<br>Expires July 1, 2011
+    Data Sutra v4.0<br>Revision 992 <em>Unlocked<\/em><br>No expiry
   <\/body>
 <\/html>",
-transparent:true,
 typeid:7,
 uuid:"CD0D6FB1-159E-4E30-9AAD-45E2EAD327E1"
 },

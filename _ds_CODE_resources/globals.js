@@ -1,44 +1,465 @@
 /**
+ * @type {Boolean}
+ *
+ * @properties={typeid:35,uuid:"972592B3-0B0B-47D7-A674-BD6B309C9D5C",variableType:-4}
+ */
+var DS_web_login_running = false;
+
+/**
+ * @properties={typeid:35,uuid:"B35E0445-3ECA-4323-8C87-BF0E5E9DEAD4",variableType:-4}
+ */
+var CODE_continuation = null;
+
+/**
+ * @properties={typeid:35,uuid:"E2514F5F-B542-4B9E-9423-5AF5CD8C129D",variableType:-4}
+ */
+var CODE_continuation_value = null;
+
+/**
+ * @constructor
+ *
+ * @description Dialog module - https://www.servoyforge.net/projects/mod-dialog
+ * @version 1.5.6
+ *
+ * Written by Robert J.C. Ivens and Paul Bakker
+ * OS dependent button-reverse patch by Harjo Kompagnie
+ * Many JSDoc (Servoy 6.0/6.1) fixes by Sanneke Aleman
+ * RuntimeForm support in FIMD by Sanneke Aleman
+ * 2012.Oct.14 Patch for form in dialog not creating proper form by Tom Parry
+ *
+ * @properties={typeid:35,uuid:"4C2A14AC-4C58-4A99-AACB-7D32D32CB0A4",variableType:-4}
+ */
+var DIALOGS = new function() {
+	/**
+	 * @type String
+	 */
+	var _sStyleSheet = 'ds_WEB_desktop';
+
+	/**
+	 * @type Number
+	 */
+	var _nDialogWidth = 500;
+
+	/**
+	 * @type Number
+	 */
+	var _nDialogHeight = 150;
+
+	/*
+	 * For every dialog shown a solutionModel clone of a dialogs_xxxx form is created, in order to be able to stack multiple dialogs
+	 * In order to prevent a memory leak, the clones need to be cleaned up after use.
+	 *
+	 * Previous logic tried to accomplish this in the onHide event of the dialog i.c.w. the scheduler plugin,
+	 * but this had it's flaws and required application.sleep(100) to work correctly, while also reducing the UX
+	 *
+	 * With the new logic the dialog calls back to markBluePrintsForCleanup() in it's onHide event.
+	 * The markBluePrintsForCleanup() method stored the formName in the bluePrintStack
+	 * When getting a new blueprint is requested, all clones are removed by looping through the bluePrintStack
+	 */
+	var bluePrintStack = []
+
+	function markBluePrintsForCleanup(formName) {
+		application.output('Marking form "' + formName + '" for cleanup', LOGGINGLEVEL.DEBUG);
+		bluePrintStack.push(formName);
+	}
+
+	var terminator = (application.getApplicationType() == APPLICATION_TYPES.WEB_CLIENT ? new Continuation() : null);
+
+	/**
+	 * Method to terminate the current method execution after capturing a Continuation.
+	 */
+	function terminateCurrentMethodExecution() {
+		terminator();
+	}
+
+	/**
+	 * @private
+	 *
+	 * @param {String} _sFormName
+	 * @param {String} _sBaseFormName
+	 * @param {Number} _nWidth
+	 * @param {Number} _nHeight
+	 */
+	function newFormBluePrint(_sFormName, _sBaseFormName, _nWidth, _nHeight) {
+		//Cleanup of previously used blueprints
+		/** @type {String} */
+		var formName;
+		for (var i = 0; i < bluePrintStack.length; i++) {
+			formName = bluePrintStack[i];
+			application.output('Cleaning up form "' + formName + '"', LOGGINGLEVEL.DEBUG);
+			if (history.removeForm(formName)) {
+				bluePrintStack.splice(i, 1);
+				if (!solutionModel.removeForm(formName)) {
+					application.output("Can't remove dialog form '" + formName + "'", LOGGINGLEVEL.ERROR);
+				}
+			} else {
+				application.output("Can't remove dialog form '" + formName + "' from history", LOGGINGLEVEL.ERROR);
+			}
+		}
+
+		//Create requested blueprint
+		if (!forms[_sFormName]) {
+			var base_form = solutionModel.getForm(_sBaseFormName);//tp assumes not null!
+			var ds = base_form.dataSource;//tp
+			var _oForm = solutionModel.newForm(_sFormName, ds, _sStyleSheet, false, _nWidth, _nHeight);
+			_oForm.extendsForm = _sBaseFormName;
+
+			//Store pointer to otherwise private method on the form, to be used when hiding the form
+			forms[_sFormName]['bluePrintCleanupCallback'] = markBluePrintsForCleanup;
+		} else {
+			application.output("Form '" + _sFormName + "' already exists.", LOGGINGLEVEL.ERROR);
+		}
+	}
+
+	/**
+	 * @private
+	 *
+	 * @param {String|RuntimeForm} _sFormName
+	 * @param {String} _sDlgType
+	 * @param {Array} _aArguments
+	 * @param {String} [_sIconStyle]
+	 *
+	 * @return {String}
+	 */
+	function showDialog(_sFormName, _sDlgType, _aArguments, _sIconStyle) {
+
+		/** @type {Object} */
+		var _aArgs = Array.prototype.slice.call(_aArguments),
+			_nWidthPadding = 22,
+			dialogWindow;
+		var _sUniqueName = _aArgs[8] || utils.stringReplace(application.getUUID().toString(), "-", "");
+
+		if (_aArgs[0] instanceof RuntimeForm) _aArgs[0] = _aArgs[0].controller.getName()
+
+		if (_sDlgType == 'FIMD') {
+			var win_name = "W_" + _sUniqueName;//tp
+			dialogWindow = application.createWindow(win_name, JSWindow.MODAL_DIALOG);//tp
+			dialogWindow.setLocation(_aArgs[1] || JSWindow.DEFAULT, _aArgs[2] || JSWindow.DEFAULT);//tp changed single | to double ||
+			if (_aArgs[5]) {
+				dialogWindow.title = _aArgs[5];
+			} else {
+				dialogWindow.title = solutionModel.getForm(_aArgs[0]).titleText
+			}
+			dialogWindow.resizable = (_aArgs[6] == null ? true : _aArgs[6]);
+			dialogWindow.showTextToolbar(_aArgs[7] == null ? false : _aArgs[7]);
+			forms[_aArgs[0]]['windowName'] = win_name;
+
+			if (application.getApplicationType() == APPLICATION_TYPES.WEB_CLIENT) {
+				var _nWidth = (_aArgs[3] == null || _aArgs[3] == JSWindow.DEFAULT) ? solutionModel.getForm(_aArgs[0]).width : _aArgs[3];
+				var _nHeight = (_aArgs[4] == null || _aArgs[4] == JSWindow.DEFAULT) ? solutionModel.getForm(_aArgs[0]).getBodyPart().height : _aArgs[4];
+
+				var _extended = 'X_' +  _sUniqueName;//tp
+				newFormBluePrint(_extended, 'dialogs_fimd', _nWidth, _nHeight);//tp
+				/** @type {RuntimeForm<dialogs_fimd>}*/
+				var form = forms[_extended];//tp
+				form.continuation = new Continuation(); // saves the current methodStack into variable x, so it can be continued later on
+				form.windowName = win_name;//tp
+				form.setupForm(_aArgs[0], _nWidth, _nHeight);
+
+				// Need to add 22 pixels to the width with the original (built-in) servoy stylesheet or else you get scrollbars. You may want to adjust this value when you use a custom (override) stylesheet
+				dialogWindow.setSize(_nWidth + _nWidthPadding, _nHeight);
+				dialogWindow.show(form);
+				terminateCurrentMethodExecution();
+			} else {
+				dialogWindow.setSize(_aArgs[3] || JSWindow.DEFAULT, _aArgs[4] || JSWindow.DEFAULT);
+				dialogWindow.show(forms[_aArgs[0]]);
+			}
+
+		} else {
+			if (application.getApplicationType() == APPLICATION_TYPES.WEB_CLIENT) {
+
+				dialogWindow = application.createWindow(_sUniqueName, JSWindow.MODAL_DIALOG);
+				dialogWindow.setInitialBounds(JSWindow.DEFAULT, JSWindow.DEFAULT, JSWindow.DEFAULT, JSWindow.DEFAULT);
+				dialogWindow.title = _aArgs[0];
+
+				dialogWindow.resizable = false;
+				dialogWindow.showTextToolbar(false);
+
+				newFormBluePrint(_sUniqueName, _sFormName, _nDialogWidth, _nDialogHeight);
+				/** @type {RuntimeForm<dialogs_base>}*/
+				var dialog = forms[_sUniqueName];
+				dialog.continuation = new Continuation(); // saves the current methodStack into variable x, so it can be continued later on
+				dialog.windowName = _sUniqueName;
+
+				switch (_sDlgType) {
+				case 'input':
+					var _top = _aArgs[2];
+					dialog.setupForm([_aArgs[1], i18n.getI18NMessage('servoy.button.ok'), i18n.getI18NMessage('servoy.button.cancel')], _sIconStyle, _top, _nDialogWidth, _nDialogHeight + 30);
+					break;
+				case 'select':
+					dialog.setupForm([_aArgs[1], _aArgs[2], i18n.getI18NMessage('servoy.button.ok'), i18n.getI18NMessage('servoy.button.cancel')], _sIconStyle, _nDialogWidth, _nDialogHeight + 30);
+					break;
+				default:
+					dialog.setupForm(_aArgs, _sIconStyle, _nDialogWidth, _nDialogHeight);
+				}
+				dialogWindow.show(dialog);
+
+				terminateCurrentMethodExecution();
+
+			} else if (application.getApplicationType() == APPLICATION_TYPES.SMART_CLIENT || application.getApplicationType() == APPLICATION_TYPES.RUNTIME_CLIENT) {
+
+				// Turn the Arguments into a real Array
+				/** @type {Array} */
+				var _aArgArray = [].slice.call(_aArgs),
+					_sReturnValue;
+
+				// Process the array and make it in a string we can use in eval
+				_aArgArray.forEach(parseArgumentList);
+
+				switch (_sDlgType) {
+				case 'warning':
+					eval('_sReturnValue = plugins.dialogs.showWarningDialog(' + _aArgArray.join(",") + ' )');
+					break;
+				case 'error':
+					eval('_sReturnValue = plugins.dialogs.showErrorDialog(' + _aArgArray.join(",") + ' )');
+					break;
+				case 'info':
+					eval('_sReturnValue = plugins.dialogs.showInfoDialog(' + _aArgArray.join(",") + ' )');
+					break;
+				case 'question':
+					eval('_sReturnValue = plugins.dialogs.showQuestionDialog(' + _aArgArray.join(",") + ' )');
+					break;
+				case 'input':
+					eval('_sReturnValue = plugins.dialogs.showInputDialog(' + _aArgArray.join(",") + ' )');
+					break;
+				case 'select':
+					eval('_sReturnValue = plugins.dialogs.showSelectDialog(' + _aArgArray.join(",") + ' )');
+					break;
+				}
+				return _sReturnValue;
+
+			}
+		}
+
+		/**
+		 * @private
+		 * @param {Object} _oValue
+		 * @param {Number} _nIndex
+		 * @param {Array} _aArray
+		 */
+		function parseArgumentList(_oValue, _nIndex, _aArray) {
+			if (_oValue instanceof String) {
+				/** @type {String} */
+				var _sVal = _oValue;
+				_aArray[_nIndex] = "'" + _sVal.replace(/\'/g, "\\'").replace(/\r/g, "\\r").replace(/\n/g, "\\n") + "'";
+			} else if (_oValue instanceof Array) {
+				/** @type {Array} */
+				var _aVal = _oValue;
+				_aArray[_nIndex] = "['" + _aVal.join("','") + "']";
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Set the stylesheet of the next dialog window
+	 *
+	 * @param {String} stylesheetName
+	 */
+	this.setStylesheet = function(stylesheetName) {
+		_sStyleSheet = stylesheetName;
+	}
+
+	/**
+	 * Set the width of the next dialog window
+	 *
+	 * @param {Number} width
+	 */
+	this.setDialogWidth = function(width) {
+		// width may not be smaller than 100
+		_nDialogWidth = (width < 100 ? 500 : width);
+	}
+
+	/**
+	 * Set the height of the next dialog window
+	 *
+	 * @param {Number} height
+	 */
+	this.setDialogHeight = function(height) {
+		// height may not be smaller than 100
+		_nDialogHeight = (height < 100 ? 100 : height);
+	}
+
+	/**
+	 * Reset the width/height of the next dialog window to the default values
+	 */
+	this.resetDialogSize = function() {
+		_nDialogWidth = 500;
+		_nDialogHeight = 150;
+	}
+
+	/**
+	 * Get the version of the dialogs module
+	 *
+	 * @return {String}
+	 */
+	this.getVersion = function() {
+		return '1.5.6';
+	}
+
+	/**
+	 * Show an error dialog
+	 *
+	 * @param {String} title
+	 * @param {String} message
+	 * @param {...String} buttons
+	 * @return {String}
+	 */
+	this.showErrorDialog = function(title, message, buttons) {
+		return showDialog('dialogs_message', 'error', arguments, 'dialogs_icon_error');
+	}
+
+	/**
+	 * Show a warning dialog
+	 *
+	 * @param {String} title
+	 * @param {String} message
+	 * @param {...String} buttons
+	 * @return {String}
+	 */
+	this.showWarningDialog = function(title, message, buttons) {
+		return showDialog('dialogs_message', 'warning', arguments, 'dialogs_icon_warning');
+	}
+
+	/**
+	 * Show an info dialog
+	 *
+	 * @param {String} title
+	 * @param {String} message
+	 * @param {...String} buttons
+	 * @return {String}
+	 */
+	this.showInfoDialog = function(title, message, buttons) {
+		return showDialog('dialogs_message', 'info', arguments, 'dialogs_icon_info');
+	}
+
+	/**
+	 * Show a question dialog
+	 *
+	 * @param {String} title
+	 * @param {String} message
+	 * @param {...String} buttons
+	 * @return {String}
+	 */
+	this.showQuestionDialog = function(title, message, buttons) {
+		return showDialog('dialogs_message', 'question', arguments, 'dialogs_icon_generic');
+	}
+
+	/**
+	 * Show an input dialog
+	 *
+	 * @param {String} title
+	 * @param {String} message
+	 * @param {String} [initialValue]
+	 * @return {String}
+	 */
+	this.showInputDialog = function(title, message, initialValue) {
+		return showDialog('dialogs_input', 'input', arguments, 'dialogs_icon_generic');
+	}
+
+	/**
+	 * Show a select dialog
+	 *
+	 * @param {String} title
+	 * @param {String} message
+	 * @param {...String|Array<String>} optionArray
+	 * @return {String}
+	 */
+	this.showSelectDialog = function(title, message, optionArray) {
+		return showDialog('dialogs_select', 'select', arguments, 'dialogs_icon_generic');
+	}
+
+	/**
+	 * Show a Form In Modal Dialog
+	 * @param {String|RuntimeForm} formName
+	 * @param {Number} [left]
+	 * @param {Number} [top]
+	 * @param {Number} [width]
+	 * @param {Number} [height]
+	 * @param {String} [title]
+	 * @param {Boolean} [resizable]
+	 * @param {Boolean} [showTextToolbar]
+	 * @param {String} [windowName]
+	 */
+	this.showFormInModalDialog = function(formName, left, top, width, height, title, resizable, showTextToolbar, windowName) {
+		showDialog(null, 'FIMD', arguments);
+	}
+};
+
+/**
+ * @type {Boolean}
+ *
+ * @properties={typeid:35,uuid:"E652B669-13C6-4D6F-A1FC-D9C32838DC5C",variableType:-4}
+ */
+var DS_web_cursor = false;
+
+/**
+ * @type {Number}
+ *
  * @properties={typeid:35,uuid:"830cf64e-5c88-4581-90ea-de8355fb5d08",variableType:4}
  */
 var AC_current_group = null;
 
 /**
+ * @type {Number}
+ *
  * @properties={typeid:35,uuid:"9a2da13a-3f68-4adb-9372-0be5ab22fa21",variableType:4}
  */
 var AC_current_organization = null;
 
 /**
+ * @type {Number}
+ *
  * @properties={typeid:35,uuid:"2a06fde2-b4ec-4aee-bbc5-ae42a64d90af",variableType:4}
  */
 var AC_current_staff = null;
 
 /**
+ * @type {Number}
+ *
  * @properties={typeid:35,uuid:"36968bfc-a7ae-4a48-bf13-89b9db2ca70a",variableType:4}
  */
 var CODE_constant_1 = 1;
 
 /**
+ * @type {String}
+ *
  * @properties={typeid:35,uuid:"0f826280-4af9-4738-a3eb-417d7e6510d8"}
  */
 var CODE_ddarray_field = '';
 
 /**
+ * @type {String}
+ *
+ * @properties={typeid:35,uuid:"5161E97B-32BD-4147-A5B5-934EF03461E3"}
+ */
+var CODE_ddarray_sort = 'asc';
+
+/**
+ * @type {Number}
+ *
  * @properties={typeid:35,uuid:"1212d8f4-ea41-49b2-9bf7-be528a0b42a3",variableType:4}
  */
 var CODE_hide_form = 0;
 
 /**
+ * @type {String}
+ *
  * @properties={typeid:35,uuid:"ed5f234f-6d84-4e88-9619-0f55d431ea33"}
  */
 var CODE_text = null;
 
 /**
+ * @type {String}
+ *
  * @properties={typeid:35,uuid:"9d94760c-98ad-4b2d-bd75-021a7a87c5d0"}
  */
 var consoleInput = '';
 
 /**
+ * @type {String}
+ *
  * @properties={typeid:35,uuid:"22fe62e8-0e3c-4d34-84d2-96f15d50543b"}
  */
 var consoleOutput = '';
@@ -49,21 +470,47 @@ var consoleOutput = '';
  * @param	{String}	findText Text to display in the fast find field.
  * @param	{String}	[findTooltip] Tooltip to display on hover of the fast find field.
  * @param	{String}	[findCheck] Column name to check in the fast find field pop-up menu.
+ * @param	{Boolean}	[setDefault=false] Fill default fast find value for this space
  *
  * @properties={typeid:24,uuid:"f329a2ea-8dbe-40fa-a8dd-75a01b623979"}
  */
-function TRIGGER_fastfind_display_set(findText,findTooltip,findCheck) {
+function TRIGGER_fastfind_display_set(findText,findTooltip,findCheck,setDefault) {
 	//solutionPrefs defined and frameworks not in a locked status
 	if (application.__parent__.solutionPrefs && !solutionPrefs.config.lockStatus) {
 	
 		var findText = arguments[0]
 		var findTooltip = arguments[1]
 		var findCheck = arguments[2]
+		var setDefault = arguments[3]
 		var baseForm = solutionPrefs.config.formNameBase
 		var currentNavItem = solutionPrefs.config.currentFormID
 		
 		if (findCheck == undefined) {
 			findCheck = true
+		}
+		
+		//reset fast find to whatever is supposed to be in there
+		if (setDefault) {
+			findText = ''
+			findCheck = ''
+			findTooltip = ''
+			
+			var findInitial = navigationPrefs.byNavItemID[currentNavItem].navigationItem.findDefault
+			
+			if (navigationPrefs.byNavItemID[currentNavItem].fastFind && navigationPrefs.byNavItemID[currentNavItem].fastFind.lastFindField) {
+				findText = navigationPrefs.byNavItemID[currentNavItem].fastFind.lastFindValue
+				findCheck = navigationPrefs.byNavItemID[currentNavItem].fastFind.lastFindField
+				findTooltip = navigationPrefs.byNavItemID[currentNavItem].fastFind.lastFindTip
+			}
+			else if (findInitial) {
+				findCheck = findInitial
+				
+				//get pretty name for chosen column
+				var prettyFind = navigationPrefs.byNavItemID[currentNavItem].fastFind.filter(function(item){return item.columnName == findInitial})
+				if (prettyFind.length) {
+					findTooltip = 'Searching in "' + prettyFind[0].findName + '"'
+				}
+			}
 		}
 		
 		//set text in fast find area
@@ -126,9 +573,9 @@ function TRIGGER_fastfind_display_set(findText,findTooltip,findCheck) {
 		
 		//set tooltip if provided
 		if (findTooltip != null) {
-			forms[baseForm + '__header__fastfind'].elements.fld_find.toolTipText = findTooltip
+			var findForm = (solutionPrefs.config.webClient) ? 'NAV_T_universal_list__WEB__fastfind' : baseForm + '__header__fastfind'
+			forms[findForm].elements.fld_find.toolTipText = findTooltip
 		}
-	
 	}
 }
 
@@ -368,7 +815,7 @@ function TRIGGER_help_navigation_set(itemID, confirmJump, subLanding, showHelp) 
 		if (navItemID) {
 			//confirm to leave current location
 			if (confirm) {
-				var proceed = plugins.dialogs.showQuestionDialog(
+				var proceed = globals.DIALOGS.showQuestionDialog(
 											'Navigate away',
 											'If you continue, you will leave the screen you are currently viewing',
 											'Yes',
@@ -396,7 +843,8 @@ function TRIGGER_help_navigation_set(itemID, confirmJump, subLanding, showHelp) 
 					navigationPrefs.byNavSetID[globals.DATASUTRA_navigation_set].lastNavItem = lastItem
 					globals.DATASUTRA_navigation_set = navSetID
 					
-					forms.NAV__navigation_tree.LABEL_update()
+					var navigationList = (solutionPrefs.config.webClient) ? 'NAV__navigation_tree__WEB' : 'NAV__navigation_tree'
+					forms[navigationList].LABEL_update()
 				}
 				
 				//move around to land on correct spot of this form
@@ -424,7 +872,7 @@ function TRIGGER_help_navigation_set(itemID, confirmJump, subLanding, showHelp) 
 			}
 		}
 		else {
-			plugins.dialogs.showErrorDialog(
+			globals.DIALOGS.showErrorDialog(
 								'Destination error',
 								'The landing destination is not available.  See the administrator'
 							)
@@ -465,472 +913,483 @@ function TRIGGER_interface_lock(freeze,freezeAll,nonTransparent,spinner,nonTrans
 		var lockList = true
 		var lockNavigation = true
 		
-		//MEMO: 44 is offset for normal header
-		var divider = 8
-		
-		//all gfx
-		var gfxTop = forms[baseForm].elements.gfx_curtain_top
-		var gfxLeftOne = forms[baseForm].elements.gfx_curtain_left_1
-		var gfxLeftTwo = forms[baseForm].elements.gfx_curtain_left_2
-		var gfxLeftRight = forms[baseForm].elements.gfx_curtain_leftright
-		var gfxRightOne = forms[baseForm].elements.gfx_curtain_right_1
-		var gfxRightTwo = forms[baseForm].elements.gfx_curtain_right_2
-		var gfxCurtain = forms[baseForm].elements.gfx_curtain
-		
-		//turn everything off
-		forms[baseForm].elements.gfx_curtain_header.visible = false
-		gfxTop.visible = false
-		gfxLeftOne.visible = false
-		gfxLeftTwo.visible = false
-		gfxLeftRight.visible = false
-		gfxRightOne.visible = false
-		gfxRightTwo.visible = false
-		gfxCurtain.visible = false
-		
-		//return curtain to default state
-		gfxCurtain.text = null
-		gfxCurtain.transparent = true
-		gfxCurtain.setImageURL('media:///curtain_5E6166.png')
-		gfxCurtain.setBorder('EmptyBorder,0,0,0,0')
-		gfxCurtain.text = null
-		gfxCurtain.toolTipText = null
-		
-		//graphic 1
-		var x = 0
-		var y = 44
-		var gfx1 = gfxCurtain
-		
-		//graphic 2
-		var x2 = 0
-		var y2 = 44
-		var gfx2 = gfxLeftOne
-		
-		//graphic 3
-		var x3 = 0
-		var y3 = 44
-		var gfx3 = gfxTop
-		
-		//if in design mode....
-		if (solutionPrefs.design.statusDesign) {
-			//height of design mode bar
-			y += 42
-			y2 += 42
-			y3 += 42
-		}
-		
-		//figure out location of curtain
-		switch (solutionPrefs.config.activeSpace) {
-			case 'standard':
-				x += solutionPrefs.screenAttrib.spaces.standard.currentHorizontal
-				y2 += solutionPrefs.screenAttrib.spaces.standard.currentVertical
-				
-				if (solutionPrefs.config.flexibleSpace) {
-					x += divider
-					y2 += divider
-				}
-				break
-			case 'standard flip':
-				x += solutionPrefs.screenAttrib.spaces.standard.currentHorizontal
-				y3 += solutionPrefs.screenAttrib.spaces.standard.currentVertical
-				
-				if (solutionPrefs.config.flexibleSpace) {
-					x += divider
-					y3 += divider
-				}
-				
-				gfx2 = gfxTop
-				gfx3 = gfxLeftOne
-				break
-				
-			case 'list':
-				x += solutionPrefs.screenAttrib.spaces.list.currentHorizontal
-				
-				if (solutionPrefs.config.flexibleSpace) {
-					x += divider
-				}
-				
-				var nonNavigation = true
-				break
+		//web client	only implements freeze for now
+		if (solutionPrefs.config.webClient) {
+			forms.DATASUTRA_WEB_0F__main.elements.gfx_curtain.visible = freeze
+			forms.DATASUTRA__sidebar.elements.gfx_curtain.visible = freeze
 			
-			case 'list flip':
-				x += solutionPrefs.screenAttrib.spaces.list.currentHorizontal
-				
-				if (solutionPrefs.config.flexibleSpace) {
-					x += divider
-				}
-				
-				var nonList = true
-				
-				gfx3 = gfxLeftOne
-				break
-				
-			case 'vertical':
-				x += solutionPrefs.screenAttrib.spaces.vertical.currentHorizontalOne + solutionPrefs.screenAttrib.spaces.vertical.currentHorizontalTwo
-				x2 += solutionPrefs.screenAttrib.spaces.vertical.currentHorizontalOne
-				
-				if (solutionPrefs.config.flexibleSpace) {
-					x += divider
-					x2 += divider
-				}
-				
-				gfx3 = gfxLeftTwo
-				break
-			case 'vertical flip':
-				x += solutionPrefs.screenAttrib.spaces.vertical.currentHorizontalOne + solutionPrefs.screenAttrib.spaces.vertical.currentHorizontalTwo
-				x3 += solutionPrefs.screenAttrib.spaces.vertical.currentHorizontalOne
-				
-				if (solutionPrefs.config.flexibleSpace) {
-					x += divider
-					x3 += divider
-				}
-				
-				gfx2 = gfxLeftTwo
-				gfx3 = gfxLeftOne
-				break
-				
-			case 'centered':
-				x += solutionPrefs.screenAttrib.spaces.centered.currentHorizontalOne
-				x2 += application.getWindowWidth(null) - solutionPrefs.screenAttrib.spaces.centered.currentHorizontalTwo
-				
-				if (solutionPrefs.screenAttrib.sidebar.status) {
-					x2 -= solutionPrefs.screenAttrib.sidebar.currentSize
-				}
-				
-				if (solutionPrefs.config.flexibleSpace) {
-					x += divider
-					x2 += divider
-				}
-				
-				gfx2 = gfxRightOne
-				gfx3 = gfxLeftOne
-				break
-			case 'centered flip':
-				x += solutionPrefs.screenAttrib.spaces.centered.currentHorizontalOne
-				x3 += application.getWindowWidth(null) - solutionPrefs.screenAttrib.spaces.centered.currentHorizontalTwo
-				
-				if (solutionPrefs.screenAttrib.sidebar.status) {
-					x3 -= solutionPrefs.screenAttrib.sidebar.currentSize
-				}
-				
-				if (solutionPrefs.config.flexibleSpace) {
-					x += divider
-					x3 += divider
-				}
-				
-				gfx3 = gfxRightOne
-				break
-				
-			case 'classic':
-				x += solutionPrefs.screenAttrib.spaces.classic.currentHorizontal
-				x2 += solutionPrefs.screenAttrib.spaces.classic.currentHorizontal
-				y += solutionPrefs.screenAttrib.spaces.classic.currentVertical
-				
-				if (solutionPrefs.config.flexibleSpace) {
-					x += divider
-					x2 += divider
-					y += divider
-				}
-				
-				gfx2 = gfxLeftRight
-				gfx3 = gfxLeftOne
-				break
-			case 'classic flip':
-				x += solutionPrefs.screenAttrib.spaces.classic.currentHorizontal
-				x3 += solutionPrefs.screenAttrib.spaces.classic.currentHorizontal
-				y += solutionPrefs.screenAttrib.spaces.classic.currentVertical
-				
-				if (solutionPrefs.config.flexibleSpace) {
-					x += divider
-					x3 += divider
-					y += divider
-				}
-				
-				gfx2 = gfxLeftOne
-				gfx3 = gfxLeftRight
-				break
-				
-			case 'wide':
-				x2 += solutionPrefs.screenAttrib.spaces.wide.currentHorizontal
-				y += solutionPrefs.screenAttrib.spaces.wide.currentVertical
-				
-				if (solutionPrefs.config.flexibleSpace) {
-					x2 += divider
-					y += divider
-				}
-				
-				gfx2 = gfxLeftRight
-				gfx3 = gfxTop
-				break
-			case 'wide flip':
-				x3 += solutionPrefs.screenAttrib.spaces.wide.currentHorizontal
-				y += solutionPrefs.screenAttrib.spaces.wide.currentVertical
-				
-				if (solutionPrefs.config.flexibleSpace) {
-					x3 += divider
-					y += divider
-				}
-				
-				gfx2 = gfxTop
-				gfx3 = gfxLeftRight
-				break
-				
-			case 'workflow':
-				if (solutionPrefs.config.activeSpace == 'workflow') {
-					var nonList = true
-					var nonNavigation = true
-				}
-				break
-				
-			case 'workflow flip':
-				if (!lockList) {
-					var nonList = true
-				}
-				var nonNavigation = true
-				break
+			//adjust z-index
+			plugins.WebClientUtils.executeClientSideJS('triggerInterfaceLock(' + freeze + ');')
 		}
-		
-		//set up spinner to show progress
-		if (spinner) {
-//			forms[baseForm].elements.gfx_spinner.setSize(application.getWindowWidth(),32)
-//			forms[baseForm].elements.gfx_spinner.setLocation((application.getWindowWidth() / 2) - 16, (application.getWindowHeight() / 2) - 200)
-			forms[baseForm].elements.gfx_spinner.visible = true
-		}
+		//smart client
 		else {
-			forms[baseForm].elements.gfx_spinner.visible = false
-		}
-		
-		//resize curtain to cover everything and then show it
-		if (freezeAll) {
-			//height of normal header (44)
-			var y = 0
+			//MEMO: 44 is offset for normal header
+			var divider = 8
+			
+			//all gfx
+			var gfxTop = forms[baseForm].elements.gfx_curtain_top
+			var gfxLeftOne = forms[baseForm].elements.gfx_curtain_left_1
+			var gfxLeftTwo = forms[baseForm].elements.gfx_curtain_left_2
+			var gfxLeftRight = forms[baseForm].elements.gfx_curtain_leftright
+			var gfxRightOne = forms[baseForm].elements.gfx_curtain_right_1
+			var gfxRightTwo = forms[baseForm].elements.gfx_curtain_right_2
+			var gfxCurtain = forms[baseForm].elements.gfx_curtain
+			
+			//turn everything off
+			forms[baseForm].elements.gfx_curtain_header.visible = false
+			gfxTop.visible = false
+			gfxLeftOne.visible = false
+			gfxLeftTwo.visible = false
+			gfxLeftRight.visible = false
+			gfxRightOne.visible = false
+			gfxRightTwo.visible = false
+			gfxCurtain.visible = false
+			
+			//return curtain to default state
+			gfxCurtain.text = null
+			gfxCurtain.transparent = true
+			gfxCurtain.setImageURL('media:///curtain_5E6166.png')
+			gfxCurtain.setBorder('EmptyBorder,0,0,0,0')
+			gfxCurtain.text = null
+			gfxCurtain.toolTipText = null
+			
+			//graphic 1
+			var x = 0
+			var y = 44
+			var gfx1 = gfxCurtain
+			
+			//graphic 2
+			var x2 = 0
+			var y2 = 44
+			var gfx2 = gfxLeftOne
+			
+			//graphic 3
+			var x3 = 0
+			var y3 = 44
+			var gfx3 = gfxTop
 			
 			//if in design mode....
 			if (solutionPrefs.design.statusDesign) {
 				//height of design mode bar
 				y += 42
-				
-				var designBar = 'DEV_0F_solution__designbar'
-				
-				//design bar form exists, go exploring
-				if (forms[designBar]) {
-					//turn off everything
-					forms[designBar].controller.enabled = false
+				y2 += 42
+				y3 += 42
+			}
+			
+			//figure out location of curtain
+			switch (solutionPrefs.config.activeSpace) {
+				case 'standard':
+					x += solutionPrefs.screenAttrib.spaces.standard.currentHorizontal
+					y2 += solutionPrefs.screenAttrib.spaces.standard.currentVertical
 					
-					//active tab
-					var designTab = forms[designBar].elements.tab_action.getTabFormNameAt(forms[designBar].elements.tab_action.tabIndex)
+					if (solutionPrefs.config.flexibleSpace) {
+						x += divider
+						y2 += divider
+					}
+					break
+				case 'standard flip':
+					x += solutionPrefs.screenAttrib.spaces.standard.currentHorizontal
+					y3 += solutionPrefs.screenAttrib.spaces.standard.currentVertical
 					
-					//light background in main design bar
-					if (forms[designBar].elements.gfx_header) {
-						forms[designBar].elements.gfx_header.enabled = true
+					if (solutionPrefs.config.flexibleSpace) {
+						x += divider
+						y3 += divider
 					}
 					
-					//highlighter in main design bar
-					if (forms[designBar].elements.highlighter) {
-						forms[designBar].elements.highlighter.enabled = true
+					gfx2 = gfxTop
+					gfx3 = gfxLeftOne
+					break
+					
+				case 'list':
+					x += solutionPrefs.screenAttrib.spaces.list.currentHorizontal
+					
+					if (solutionPrefs.config.flexibleSpace) {
+						x += divider
 					}
 					
-					//design bar action form exists, go exploring
-					if (forms[designTab]) {
+					var nonNavigation = true
+					break
+				
+				case 'list flip':
+					x += solutionPrefs.screenAttrib.spaces.list.currentHorizontal
+					
+					if (solutionPrefs.config.flexibleSpace) {
+						x += divider
+					}
+					
+					var nonList = true
+					
+					gfx3 = gfxLeftOne
+					break
+					
+				case 'vertical':
+					x += solutionPrefs.screenAttrib.spaces.vertical.currentHorizontalOne + solutionPrefs.screenAttrib.spaces.vertical.currentHorizontalTwo
+					x2 += solutionPrefs.screenAttrib.spaces.vertical.currentHorizontalOne
+					
+					if (solutionPrefs.config.flexibleSpace) {
+						x += divider
+						x2 += divider
+					}
+					
+					gfx3 = gfxLeftTwo
+					break
+				case 'vertical flip':
+					x += solutionPrefs.screenAttrib.spaces.vertical.currentHorizontalOne + solutionPrefs.screenAttrib.spaces.vertical.currentHorizontalTwo
+					x3 += solutionPrefs.screenAttrib.spaces.vertical.currentHorizontalOne
+					
+					if (solutionPrefs.config.flexibleSpace) {
+						x += divider
+						x3 += divider
+					}
+					
+					gfx2 = gfxLeftTwo
+					gfx3 = gfxLeftOne
+					break
+					
+				case 'centered':
+					x += solutionPrefs.screenAttrib.spaces.centered.currentHorizontalOne
+					x2 += application.getWindowWidth(null) - solutionPrefs.screenAttrib.spaces.centered.currentHorizontalTwo
+					
+					if (solutionPrefs.screenAttrib.sidebar.status) {
+						x2 -= solutionPrefs.screenAttrib.sidebar.currentSize
+					}
+					
+					if (solutionPrefs.config.flexibleSpace) {
+						x += divider
+						x2 += divider
+					}
+					
+					gfx2 = gfxRightOne
+					gfx3 = gfxLeftOne
+					break
+				case 'centered flip':
+					x += solutionPrefs.screenAttrib.spaces.centered.currentHorizontalOne
+					x3 += application.getWindowWidth(null) - solutionPrefs.screenAttrib.spaces.centered.currentHorizontalTwo
+					
+					if (solutionPrefs.screenAttrib.sidebar.status) {
+						x3 -= solutionPrefs.screenAttrib.sidebar.currentSize
+					}
+					
+					if (solutionPrefs.config.flexibleSpace) {
+						x += divider
+						x3 += divider
+					}
+					
+					gfx3 = gfxRightOne
+					break
+					
+				case 'classic':
+					x += solutionPrefs.screenAttrib.spaces.classic.currentHorizontal
+					x2 += solutionPrefs.screenAttrib.spaces.classic.currentHorizontal
+					y += solutionPrefs.screenAttrib.spaces.classic.currentVertical
+					
+					if (solutionPrefs.config.flexibleSpace) {
+						x += divider
+						x2 += divider
+						y += divider
+					}
+					
+					gfx2 = gfxLeftRight
+					gfx3 = gfxLeftOne
+					break
+				case 'classic flip':
+					x += solutionPrefs.screenAttrib.spaces.classic.currentHorizontal
+					x3 += solutionPrefs.screenAttrib.spaces.classic.currentHorizontal
+					y += solutionPrefs.screenAttrib.spaces.classic.currentVertical
+					
+					if (solutionPrefs.config.flexibleSpace) {
+						x += divider
+						x3 += divider
+						y += divider
+					}
+					
+					gfx2 = gfxLeftOne
+					gfx3 = gfxLeftRight
+					break
+					
+				case 'wide':
+					x2 += solutionPrefs.screenAttrib.spaces.wide.currentHorizontal
+					y += solutionPrefs.screenAttrib.spaces.wide.currentVertical
+					
+					if (solutionPrefs.config.flexibleSpace) {
+						x2 += divider
+						y += divider
+					}
+					
+					gfx2 = gfxLeftRight
+					gfx3 = gfxTop
+					break
+				case 'wide flip':
+					x3 += solutionPrefs.screenAttrib.spaces.wide.currentHorizontal
+					y += solutionPrefs.screenAttrib.spaces.wide.currentVertical
+					
+					if (solutionPrefs.config.flexibleSpace) {
+						x3 += divider
+						y += divider
+					}
+					
+					gfx2 = gfxTop
+					gfx3 = gfxLeftRight
+					break
+					
+				case 'workflow':
+					if (solutionPrefs.config.activeSpace == 'workflow') {
+						var nonList = true
+						var nonNavigation = true
+					}
+					break
+					
+				case 'workflow flip':
+					if (!lockList) {
+						var nonList = true
+					}
+					var nonNavigation = true
+					break
+			}
+			
+			//set up spinner to show progress
+			if (spinner) {
+	//			forms[baseForm].elements.gfx_spinner.setSize(application.getWindowWidth(),32)
+	//			forms[baseForm].elements.gfx_spinner.setLocation((application.getWindowWidth() / 2) - 16, (application.getWindowHeight() / 2) - 200)
+				forms[baseForm].elements.gfx_spinner.visible = true
+			}
+			else {
+				forms[baseForm].elements.gfx_spinner.visible = false
+			}
+			
+			//resize curtain to cover everything and then show it
+			if (freezeAll) {
+				//height of normal header (44)
+				var y = 0
+				
+				//if in design mode....
+				if (solutionPrefs.design.statusDesign) {
+					//height of design mode bar
+					y += 42
+					
+					var designBar = 'DEV_0F_solution__designbar'
+					
+					//design bar form exists, go exploring
+					if (forms[designBar]) {
+						//turn off everything
+						forms[designBar].controller.enabled = false
+						
+						//active tab
+						var designTab = forms[designBar].elements.tab_action.getTabFormNameAt(forms[designBar].elements.tab_action.tabIndex)
+						
 						//light background in main design bar
-						if (forms[designTab].elements.gfx_header) {
-							forms[designTab].elements.gfx_header.enabled = true
+						if (forms[designBar].elements.gfx_header) {
+							forms[designBar].elements.gfx_header.enabled = true
 						}
 						
 						//highlighter in main design bar
-						if (forms[designTab].elements.highlighter) {
-							forms[designTab].elements.highlighter.enabled = true
+						if (forms[designBar].elements.highlighter) {
+							forms[designBar].elements.highlighter.enabled = true
 						}
-					}
-				}
-				
-				//just turn off the second curtain so don't get double effect
-				forms[baseForm].elements.gfx_curtain_2.visible = false
-			}
-			
-			//set location
-			forms[baseForm].elements.gfx_curtain.setLocation(0,y)
-			//set size
-			forms[baseForm].elements.gfx_curtain.setSize(application.getWindowWidth(),application.getWindowHeight())
-			
-			//non-transparent, set up
-			if (nonTransparent) {
-				forms[baseForm].elements.gfx_curtain.transparent = false
-				forms[baseForm].elements.gfx_curtain.setImageURL(null)
-				forms[baseForm].elements.gfx_curtain.setBorder('MatteBorder,0,0,200,0,#323A4B')
-				
-				//set text
-				if (nonTransparentText) {
-					forms[baseForm].elements.gfx_curtain.text = nonTransparentText
-				}
-			}
-			
-			forms[baseForm].elements.gfx_curtain.enabled = true
-			forms[baseForm].elements.gfx_curtain.visible = true
-		}
-		//lock everything
-		else if (freeze) {
-			//prefer to modify the status of elements
-			if (oldMode) {
-				//turn off everything
-				forms[baseForm].controller.enabled = false
-				
-				//turn on grafx stuff
-					//header/footer
-					forms[baseForm + '__header'].elements.gfx_header.enabled = true
-					forms[baseForm + '__footer'].elements.gfx_footer.enabled = true
-					
-					//check content panels for subheader element
-					var tabPanels = ['A','B','C','D']
-					for (var i = 0; i < tabPanels.length; i++) {
-						var tabPanel = 'tab_content_' + tabPanels[i]
 						
-						//there is a form in this tab panel
-						if (forms[baseForm].elements[tabPanel].tabIndex) {
-							var formName = forms[baseForm].elements[tabPanel].getTabFormNameAt(forms[baseForm].elements[tabPanel].tabIndex)
+						//design bar action form exists, go exploring
+						if (forms[designTab]) {
+							//light background in main design bar
+							if (forms[designTab].elements.gfx_header) {
+								forms[designTab].elements.gfx_header.enabled = true
+							}
 							
-							//if a subheader present, turn it on
-							if (forms[formName] && forms[formName].elements.gfx_subheader) {
-								forms[formName].elements.gfx_subheader.enabled = true
+							//highlighter in main design bar
+							if (forms[designTab].elements.highlighter) {
+								forms[designTab].elements.highlighter.enabled = true
 							}
 						}
 					}
 					
-					//check active toolbar for background elements
-					if (forms[baseForm + '__header__toolbar'].elements.tab_toolbar.tabIndex) {
-						var formName = forms[baseForm + '__header__toolbar'].elements.tab_toolbar.getTabFormNameAt(forms[baseForm + '__header__toolbar'].elements.tab_toolbar.tabIndex)
+					//just turn off the second curtain so don't get double effect
+					forms[baseForm].elements.gfx_curtain_2.visible = false
+				}
+				
+				//set location
+				forms[baseForm].elements.gfx_curtain.setLocation(0,y)
+				//set size
+				forms[baseForm].elements.gfx_curtain.setSize(application.getWindowWidth(),application.getWindowHeight())
+				
+				//non-transparent, set up
+				if (nonTransparent) {
+					forms[baseForm].elements.gfx_curtain.transparent = false
+					forms[baseForm].elements.gfx_curtain.setImageURL(null)
+					forms[baseForm].elements.gfx_curtain.setBorder('MatteBorder,0,0,200,0,#323A4B')
+					
+					//set text
+					if (nonTransparentText) {
+						forms[baseForm].elements.gfx_curtain.text = nonTransparentText
+					}
+				}
+				
+				forms[baseForm].elements.gfx_curtain.enabled = true
+				forms[baseForm].elements.gfx_curtain.visible = true
+			}
+			//lock everything
+			else if (freeze) {
+				//prefer to modify the status of elements
+				if (oldMode) {
+					//turn off everything
+					forms[baseForm].controller.enabled = false
+					
+					//turn on grafx stuff
+						//header/footer
+						forms[baseForm + '__header'].elements.gfx_header.enabled = true
+						forms[baseForm + '__footer'].elements.gfx_footer.enabled = true
 						
-						//if toolbar background graphics present, turn them on
-						if (forms[formName].elements.gfx_tool_left) {
-							forms[formName].elements.gfx_tool_left.enabled = true
+						//check content panels for subheader element
+						var tabPanels = ['A','B','C','D']
+						for (var i = 0; i < tabPanels.length; i++) {
+							var tabPanel = 'tab_content_' + tabPanels[i]
+							
+							//there is a form in this tab panel
+							if (forms[baseForm].elements[tabPanel].tabIndex) {
+								var formName = forms[baseForm].elements[tabPanel].getTabFormNameAt(forms[baseForm].elements[tabPanel].tabIndex)
+								
+								//if a subheader present, turn it on
+								if (forms[formName] && forms[formName].elements.gfx_subheader) {
+									forms[formName].elements.gfx_subheader.enabled = true
+								}
+							}
 						}
-						if (forms[formName].elements.gfx_tool_center) {
-							forms[formName].elements.gfx_tool_center.enabled = true
+						
+						//check active toolbar for background elements
+						if (forms[baseForm + '__header__toolbar'].elements.tab_toolbar.tabIndex) {
+							var formName = forms[baseForm + '__header__toolbar'].elements.tab_toolbar.getTabFormNameAt(forms[baseForm + '__header__toolbar'].elements.tab_toolbar.tabIndex)
+							
+							//if toolbar background graphics present, turn them on
+							if (forms[formName].elements.gfx_tool_left) {
+								forms[formName].elements.gfx_tool_left.enabled = true
+							}
+							if (forms[formName].elements.gfx_tool_center) {
+								forms[formName].elements.gfx_tool_center.enabled = true
+							}
+							if (forms[formName].elements.gfx_tool_right) {
+								forms[formName].elements.gfx_tool_right.enabled = true
+							}
 						}
-						if (forms[formName].elements.gfx_tool_right) {
-							forms[formName].elements.gfx_tool_right.enabled = true
-						}
+					
+					//set space borders to light color
+					var borderDisabled = 'MatteBorder,0,0,0,1,#797778'
+					for (var i = 1; i <= 14 && ((i== 1 || i == 8) ? i++ : i); i++) {
+						forms[baseForm + '__header'].elements['btn_space_' + i].setBorder(borderDisabled)
+					}
+					
+					//turn on workflow form
+					forms[workflowForm].controller.enabled = true
+				}
+				//show graphics positioned appropriately
+				else {
+				//HEADER CURTAIN
+					if (true) {
+						forms[baseForm].elements.gfx_curtain_header.setLocation(0,0)
+						forms[baseForm].elements.gfx_curtain_header.setSize(application.getWindowWidth(null),44)
+						forms[baseForm].elements.gfx_curtain_header.visible = true
+					}
+					else {
+						//turn off curtain
+						forms[baseForm].elements.gfx_curtain_header.visible = false
+					}
+					
+				//CURTAIN ONE
+					if (lockWorkflow && solutionPrefs.config.activeSpace != 'workflow flip') {
+						//set location
+						gfx1.setLocation(x,y)
+						//set size
+						gfx1.setSize(
+									forms[baseForm].elements.tab_content_C.getWidth(),
+									forms[baseForm].elements.tab_content_C.getHeight()
+								)
+						
+						//turn on curtain
+						gfx1.visible = true
+					}
+					
+				//CURTAIN TWO
+					if (lockList && !nonList) {
+						//set location
+						gfx2.setLocation(x2,y2)
+						//set size
+						gfx2.setSize(
+									forms[baseForm].elements.tab_content_B.getWidth(),
+									forms[baseForm].elements.tab_content_B.getHeight()
+								)
+						
+						//turn on curtain
+						gfx2.visible = true
 					}
 				
-				//set space borders to light color
-				var borderDisabled = 'MatteBorder,0,0,0,1,#797778'
-				for (var i = 1; i <= 14 && ((i== 1 || i == 8) ? i++ : i); i++) {
-					forms[baseForm + '__header'].elements['btn_space_' + i].setBorder(borderDisabled)
+				//CURTAIN THREE
+					if (lockNavigation && !nonNavigation) {
+						//set location
+						gfx3.setLocation(x3,y3)
+						//set size
+						gfx3.setSize(
+									forms[baseForm].elements.tab_content_A.getWidth(),
+									forms[baseForm].elements.tab_content_A.getHeight()
+								)
+						
+						//turn on curtain
+						gfx3.visible = true
+					}
+					
+				//CURTAIN SIDEBAR
+					if (freeze && solutionPrefs.screenAttrib.sidebar.status) {
+						//set location
+						gfxRightTwo.setLocation(
+									forms[baseForm].elements.tab_content_D.getLocationX(),
+									forms[baseForm].elements.tab_content_D.getLocationY() + 44
+								)
+						//set size
+						gfxRightTwo.setSize(
+									forms[baseForm].elements.tab_content_D.getWidth(),
+									forms[baseForm].elements.tab_content_D.getHeight() - 44
+								)
+						
+						//turn on curtain
+						gfxRightTwo.visible = true
+					}
 				}
-				
-				//turn on workflow form
-				forms[workflowForm].controller.enabled = true
 			}
-			//show graphics positioned appropriately
+			//unlock everything
 			else {
-			//HEADER CURTAIN
-				if (true) {
-					forms[baseForm].elements.gfx_curtain_header.setLocation(0,0)
-					forms[baseForm].elements.gfx_curtain_header.setSize(application.getWindowWidth(null),44)
-					forms[baseForm].elements.gfx_curtain_header.visible = true
-				}
-				else {
+				//prefer to modify the status of elements
+				if (oldMode) {
+					//turn on everything
+					forms[baseForm].controller.enabled = true
+					
 					//turn off curtain
-					forms[baseForm].elements.gfx_curtain_header.visible = false
-				}
-				
-			//CURTAIN ONE
-				if (lockWorkflow && solutionPrefs.config.activeSpace != 'workflow flip') {
-					//set location
-					gfx1.setLocation(x,y)
-					//set size
-					gfx1.setSize(
-								forms[baseForm].elements.tab_content_C.getWidth(),
-								forms[baseForm].elements.tab_content_C.getHeight()
-							)
+					if (forms[baseForm].elements.gfx_curtain.visible) {
+						forms[baseForm].elements.gfx_curtain.visible = false
+					}	
+	//				//return curtain to default state
+	//				forms[baseForm].elements.gfx_curtain.transparent = true
+	//				forms[baseForm].elements.gfx_curtain.setImageURL('media:///curtain_5E6166.png')
+	//				forms[baseForm].elements.gfx_curtain.setBorder('EmptyBorder,0,0,0,0')
+	//				
+	//				forms[baseForm].elements.gfx_curtain.text = null
+	//				forms[baseForm].elements.gfx_curtain.toolTipText = null
 					
-					//turn on curtain
-					gfx1.visible = true
-				}
-				
-			//CURTAIN TWO
-				if (lockList && !nonList) {
-					//set location
-					gfx2.setLocation(x2,y2)
-					//set size
-					gfx2.setSize(
-								forms[baseForm].elements.tab_content_B.getWidth(),
-								forms[baseForm].elements.tab_content_B.getHeight()
-							)
+					//turn off curtain3
+					if (forms[baseForm].elements.gfx_spinner.visible) {
+						forms[baseForm].elements.gfx_spinner.visible = false
+					}
 					
-					//turn on curtain
-					gfx2.visible = true
-				}
-			
-			//CURTAIN THREE
-				if (lockNavigation && !nonNavigation) {
-					//set location
-					gfx3.setLocation(x3,y3)
-					//set size
-					gfx3.setSize(
-								forms[baseForm].elements.tab_content_A.getWidth(),
-								forms[baseForm].elements.tab_content_A.getHeight()
-							)
+					//developer was locked, return to that state
+					if (solutionPrefs.design.statusLockWorkflow || solutionPrefs.design.statusLockList) {
+						globals.DEV_lock_workflow()
+					}
 					
-					//turn on curtain
-					gfx3.visible = true
-				}
-				
-			//CURTAIN SIDEBAR
-				if (freeze && solutionPrefs.screenAttrib.sidebar.status) {
-					//set location
-					gfxRightTwo.setLocation(
-								forms[baseForm].elements.tab_content_D.getLocationX(),
-								forms[baseForm].elements.tab_content_D.getLocationY() + 44
-							)
-					//set size
-					gfxRightTwo.setSize(
-								forms[baseForm].elements.tab_content_D.getWidth(),
-								forms[baseForm].elements.tab_content_D.getHeight() - 44
-							)
-					
-					//turn on curtain
-					gfxRightTwo.visible = true
-				}
-			}
-		}
-		//unlock everything
-		else {
-			//prefer to modify the status of elements
-			if (oldMode) {
-				//turn on everything
-				forms[baseForm].controller.enabled = true
-				
-				//turn off curtain
-				if (forms[baseForm].elements.gfx_curtain.visible) {
-					forms[baseForm].elements.gfx_curtain.visible = false
-				}	
-//				//return curtain to default state
-//				forms[baseForm].elements.gfx_curtain.transparent = true
-//				forms[baseForm].elements.gfx_curtain.setImageURL('media:///curtain_5E6166.png')
-//				forms[baseForm].elements.gfx_curtain.setBorder('EmptyBorder,0,0,0,0')
-//				
-//				forms[baseForm].elements.gfx_curtain.text = null
-//				forms[baseForm].elements.gfx_curtain.toolTipText = null
-				
-				//turn off curtain3
-				if (forms[baseForm].elements.gfx_spinner.visible) {
-					forms[baseForm].elements.gfx_spinner.visible = false
-				}
-				
-				//developer was locked, return to that state
-				if (solutionPrefs.design.statusLockWorkflow || solutionPrefs.design.statusLockList) {
-					globals.DEV_lock_workflow()
-				}
-				
-				//only show active space options
-				var borderEnabled = 'MatteBorder,0,0,0,1,#333333'
-				var borderDisabled = 'MatteBorder,0,0,0,1,#797778'
-				var spacesOK = (navigationPrefs.byNavItemID[solutionPrefs.config.currentFormID] && navigationPrefs.byNavItemID[solutionPrefs.config.currentFormID].spaceSetup) ? navigationPrefs.byNavItemID[solutionPrefs.config.currentFormID].spaceSetup : new Array(true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true)
-				for (var i = 1; i <= 14; i++) {
-					forms[baseForm + '__header'].elements['btn_space_' + i].enabled = spacesOK[i-1]
-					
-					if (i != 1 && i != 8) {
-						forms[baseForm + '__header'].elements['btn_space_' + i].setBorder(spacesOK[i-1] ? borderEnabled : borderDisabled)
+					//only show active space options
+					var borderEnabled = 'MatteBorder,0,0,0,1,#333333'
+					var borderDisabled = 'MatteBorder,0,0,0,1,#797778'
+					var spacesOK = (navigationPrefs.byNavItemID[solutionPrefs.config.currentFormID] && navigationPrefs.byNavItemID[solutionPrefs.config.currentFormID].spaceSetup) ? navigationPrefs.byNavItemID[solutionPrefs.config.currentFormID].spaceSetup : new Array(true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true)
+					for (var i = 1; i <= 14; i++) {
+						forms[baseForm + '__header'].elements['btn_space_' + i].enabled = spacesOK[i-1]
+						
+						if (i != 1 && i != 8) {
+							forms[baseForm + '__header'].elements['btn_space_' + i].setBorder(spacesOK[i-1] ? borderEnabled : borderDisabled)
+						}
 					}
 				}
 			}
@@ -1147,13 +1606,14 @@ function TRIGGER_navigation_filter_update(forceRefresh,itemID) {
  * 
  * @param	{String}	[itemID] The navigation item to jump to.
  * @param	{Boolean}	[setFoundset] Modify the foundset on the new navigation item.
- * @param	{JSFoundset|Number[]}	[useFoundset] Foundset or array of primary keys to restore on the destination form.
+ * @param	{JSFoundSet|Number[]|UUID[]}	[useFoundset] Foundset or array of primary keys to restore on the destination form.
+ * @param	{Number}	[idNavigationItem] The pk for the navigation item to jump to. (will override itemID)
  *
  * @returns	{Boolean}	Success of loading the foundset requested.
  * 
  * @properties={typeid:24,uuid:"e58b6503-e021-452d-b2b1-075c79e44ddd"}
  */
-function TRIGGER_navigation_set(itemID, setFoundset, useFoundset) {
+function TRIGGER_navigation_set(itemID, setFoundset, useFoundset, idNavigationItem) {
 //TODO: when navitem filters on, record will not be preserved when new records loaded in
 	
 	//solutionPrefs defined and frameworks not in a locked status
@@ -1162,31 +1622,43 @@ function TRIGGER_navigation_set(itemID, setFoundset, useFoundset) {
 		var itemID = arguments[0]
 		var setFoundset = arguments[1]
 		var useFoundset = arguments[2]
-	
-		//loop through all available items, finding everything with this registry
-		var navItemID = new Array()
-		for (var i in navigationPrefs.byNavItemID) {
-			if (navigationPrefs.byNavItemID[i] && navigationPrefs.byNavItemID[i].navigationItem.itemId == itemID) {
-				navItemID.push(i)
+		var idNavigationItem = arguments[3]
+		
+		//variable letting us know if foundset was intentionally modified
+		var foundsetSet = false
+		
+		//navigate by registry
+		if (!idNavigationItem) {
+			//loop through all available items, finding everything with this registry
+			var navItemID = new Array()
+			for (var i in navigationPrefs.byNavItemID) {
+				if (navigationPrefs.byNavItemID[i] && navigationPrefs.byNavItemID[i].navigationItem.itemId == itemID) {
+					navItemID.push(i)
+				}
+			}
+		
+			//try to find navigation item from selected set
+			for (var i = 0; i < navItemID.length; i++) {
+				if (navigationPrefs.byNavItemID[navItemID[i]].navigationItem.idNavigation == globals.DATASUTRA_navigation_set) {
+					var found = true
+					break
+				}
+			}
+			
+			//prefer navigation item from selected set
+			if (found) {
+				var navItem = navigationPrefs.byNavItemID[navItemID[i]].navigationItem
+			}
+			//take first navigation item with passed registry
+			else if (navItemID.length) {
+				var navItem = navigationPrefs.byNavItemID[navItemID[0]].navigationItem
 			}
 		}
-	
-		//try to find navigaion item from selected set
-		for (var i = 0; i < navItemID.length; i++) {
-			if (navigationPrefs.byNavItemID[navItemID[i]].navigationItem.idNavigation == globals.DATASUTRA_navigation_set) {
-				var found = true
-				break
-			}
+		//navigate by id_navigation_item
+		else {
+			var navItem = navigationPrefs.byNavItemID[idNavigationItem].navigationItem
 		}
-	
-		//prefer navigaion item from selected set
-		if (found) {
-			var navItem = navigationPrefs.byNavItemID[navItemID[i]].navigationItem
-		}
-		//take first navigation item with passed registry
-		else if (navItemID.length) {
-			var navItem = navigationPrefs.byNavItemID[navItemID[0]].navigationItem
-		}
+		
 	
 		if (navItem) {
 			var navSetID = navItem.idNavigation
@@ -1196,27 +1668,55 @@ function TRIGGER_navigation_set(itemID, setFoundset, useFoundset) {
 			
 			var lastItem = solutionPrefs.config.currentFormID
 			
-			//if from a different navigation set
-			if (globals.DATASUTRA_navigation_set != navSetID) {
-				navigationPrefs.byNavSetID[globals.DATASUTRA_navigation_set].lastNavItem = lastItem
-				globals.DATASUTRA_navigation_set = navSetID
-	
-				//update text display
-				forms.NAV__navigation_tree.LABEL_update()
+			//need to change navigation items
+			if (lastItem != navItem.idNavigationItem) {
+				//make sure indicator is showing
+				scopes.DS.webNavSwitchProgress()
+				
+				//call router to switch entire page when not called from router
+				if (globals.DATASUTRA_router_enable && !idNavigationItem) {
+					globals.DS_router(null,null,navItem.idNavigationItem)
+					
+					//fill global to be used on second pass through this method (after url is rewritten)
+					globals.DATASUTRA_router_payload = {
+							itemID : itemID,
+							setFoundset : setFoundset,
+							useFoundset : (useFoundset) ? useFoundset : forms[application.getMethodTriggerFormName()].foundset
+						}
+					return
+				}
+				else {
+					//if from a different navigation set
+					if (globals.DATASUTRA_navigation_set != navSetID) {
+						navigationPrefs.byNavSetID[globals.DATASUTRA_navigation_set].lastNavItem = lastItem
+						globals.DATASUTRA_navigation_set = navSetID
+						
+						//update text display
+						var navigationList = (solutionPrefs.config.webClient) ? 'NAV__navigation_tree__WEB' : 'NAV__navigation_tree'
+						forms[navigationList].LABEL_update()
+					}
+					
+					//redraw list; make sure row is expanded if node2; load new item
+					forms.NAV__navigation_tree__rows.LIST_expand_collapse(null,navItem.idNavigationItem,'open',navSetID)
+				}
 			}
-			
-			//redraw list; make sure row is expanded if node2; load new item
-			forms.NAV__navigation_tree__rows.LIST_expand_collapse(null,navItem.idNavigationItem,'open',navSetID)
 			
 			//bring foundset over
 			if (setFoundset) {
-				var callingFoundset = (useFoundset) ? useFoundset : forms[application.getMethodTriggerFormName()].foundset
-	
+				var callingFoundset = (useFoundset) ? useFoundset : (application.getMethodTriggerFormName() ? forms[application.getMethodTriggerFormName()].foundset : null)
+				
+				//don't have a foundset, stop trying to set it
+				if (!callingFoundset) {
+					return
+				}
+						
 				//we're passed an array, convert to dataset
 				if (callingFoundset instanceof Array) {
 					var ds = databaseManager.convertToDataSet(callingFoundset)
 	
 					forms[formNameWorkflow].controller.loadRecords(ds)
+					
+					foundsetSet = true
 				}
 				//working with foundset, verify that based on same table
 				else {
@@ -1231,11 +1731,13 @@ function TRIGGER_navigation_set(itemID, setFoundset, useFoundset) {
 					if (formOne == formTwo) {
 						//load related foundset
 						forms[formNameWorkflow].controller.loadRecords(callingFoundset.unrelate())
+						
+						foundsetSet = true
 					}
 				}
 	
-				//one of the above two is true, //TODO!
-				if (true) {
+				//a foundset was modified, do some more massage
+				if (foundsetSet) {
 					//restrict if required to
 				//	globals.NAV_foundset_restrict(true,null,true)
 	
@@ -1249,16 +1751,24 @@ function TRIGGER_navigation_set(itemID, setFoundset, useFoundset) {
 	
 					//show that only a portion of current foundset selected
 					globals.DATASUTRA_find = 'Related subset'
-					globals.DATASUTRA_find_field = null
-				//	forms[solutionPrefs.config.formNameBase].elements.find_end.setImageURL('media:///find_stop.png')
+//					globals.DATASUTRA_find_field = null
+					
+					//fast find is enabled, track
+					if (navigationPrefs.byNavItemID[navItem.idNavigationItem].fastFind) {
+						navigationPrefs.byNavItemID[navItem.idNavigationItem].fastFind.lastFindValue = globals.DATASUTRA_find
+						navigationPrefs.byNavItemID[navItem.idNavigationItem].fastFind.lastFindField = globals.DATASUTRA_find_field
+						navigationPrefs.byNavItemID[navItem.idNavigationItem].fastFind.lastFindTip = null
+					}
 	
 					//using UL, refresh
 					if (navItem.useFwList) {
 						//serclipse 4
 						if (utils.stringToNumber(solutionPrefs.clientInfo.verServoy) >= 4) {
 							var formUL = navigationPrefs.byNavItemID[navItem.idNavigationItem].listData.tabFormInstance
-	
-							forms[formUL].controller.loadRecords(modifiedFoundset.unrelate())
+							
+							if (forms[formUL]) {
+								forms[formUL].controller.loadRecords(modifiedFoundset.unrelate())
+							}
 						}
 						//3.5
 						else {
@@ -1303,7 +1813,7 @@ function TRIGGER_navigation_set(itemID, setFoundset, useFoundset) {
 			}
 		}
 		else {
-			plugins.dialogs.showErrorDialog(
+			globals.DIALOGS.showErrorDialog(
 						'Navigation error',
 						'You do not have access to this screen.  Please see administrator'
 				)
@@ -1509,7 +2019,14 @@ function TRIGGER_progressbar_stop(forceUpdate) {
 			}
 			//set toolbar to previous if there is one
 			else if (solutionPrefs.config.lastSelectedToolbar) {
-				globals.DS_toolbar_cycle(solutionPrefs.config.lastSelectedToolbar)
+				//web client
+				if (solutionPrefs.config.webClient) {
+					forms.DATASUTRA_WEB_0F__header__toolbar.DS_toolbar_cycle(solutionPrefs.config.lastSelectedToolbar)
+				}
+				//smart client
+				else {
+					globals.DS_toolbar_cycle(solutionPrefs.config.lastSelectedToolbar)
+				}
 			}
 			//go to solution title
 			else {
@@ -1540,12 +2057,30 @@ function TRIGGER_progressbar_stop(forceUpdate) {
  * Checks if the group of the currently logged in user is permitted to perform action.
  * 
  * @param	{String}	registeredAction Registered action (configured in Access & control).
+ * @param	{Boolean}	[showDialog=false] Show error dialog when action not allowed.
  * 
  * @returns	{Boolean}	Action authorized status.
  * 
  * @properties={typeid:24,uuid:"32c5064f-1136-410e-8f08-900c0872fc96"}
+ * @AllowToRunInFind
  */
-function TRIGGER_registered_action_authenticate(registeredAction) {
+function TRIGGER_registered_action_authenticate(registeredAction,showDialog) {
+	//default to not show dialogs
+	if (typeof showDialog != 'boolean') {
+		showDialog = false
+	}
+	
+	/**
+	 * Show dialog popup indicating why failed.
+	 * 
+	 * @param {String} actionName
+	 */
+	function alert(actionName) {
+		if (showDialog) {
+			globals.DIALOGS.showErrorDialog('Error','You do not have permission to:\n' + actionName)
+		}
+	}
+	
 	//check to see that solutionPrefs is defined
 	if (application.__parent__.solutionPrefs) {
 		//check to see that access and control is enabled
@@ -1580,11 +2115,14 @@ function TRIGGER_registered_action_authenticate(registeredAction) {
 				}
 				//action disallowed
 				else {
+					alert(allActions.description || allActions.action_id)
 					return false
 				}
 			}
 			//the specified action does not exist
 			else {
+				//possible should state that this action doesn't exist...
+				alert(registeredAction)
 				return false
 			}
 		}
@@ -1637,18 +2175,21 @@ function TRIGGER_spaces_set(spaceName,alwaysFire,skipUI) {
 		if ((newSpace != oldSpace || alwaysFire) && found) {
 			var baseForm = solutionPrefs.config.formNameBase
 			
-			//hide complement and show current
-			if (i < 8) {
-				var complement = i + 7
+			if (!solutionPrefs.config.webClient) {
+				//hide complement and show current
+				if (i < 8) {
+					var complement = i + 7
+				}
+				else {
+					var complement = i - 7
+				}
+				forms[baseForm + '__header'].elements['btn_space_'+i].visible = true
+				forms[baseForm + '__header'].elements['btn_space_'+complement].visible = false
 			}
-			else {
-				var complement = i - 7
-			}
-			forms[baseForm + '__header'].elements['btn_space_'+i].visible = true
-			forms[baseForm + '__header'].elements['btn_space_'+complement].visible = false
 			
-			//fire space changer	
-			globals.DS_space_change('btn_space_'+i,true,alwaysFire,skipUI)
+			//fire space changer
+			var spaceMethod = solutionPrefs.config.webClient ? forms.DATASUTRA_WEB_0F__header.ACTION_space_change : globals.DS_space_change
+			spaceMethod('btn_space_'+i,true,alwaysFire,skipUI)
 			
 			return true
 		}
@@ -1713,7 +2254,7 @@ function TRIGGER_timer(startStop) {
 			}
 		}
 		else {
-			plugins.dialogs.showErrorDialog('Timer error','The timer has not been started yet')
+			globals.DIALOGS.showErrorDialog('Timer error','The timer has not been started yet')
 		}
 	}
 }
@@ -1723,10 +2264,11 @@ function TRIGGER_timer(startStop) {
  * 
  * @param	{Boolean}	[status] Enable/disable the record navigator.<br>
  * 						Note: if false passed, true must be specified before navigator will work on other future forms.
+ * @param	{Number}	[maxWidth] Width of progress indicator (needed for webclient)
  * 
  * @properties={typeid:24,uuid:"545d621f-ead0-4ac5-99aa-7e3a05c85e41"}
  */
-function TRIGGER_toolbar_record_navigator_set(status) {
+function TRIGGER_toolbar_record_navigator_set(status,maxWidth) {
 
 	//solutionPrefs defined and frameworks not in a locked status
 	if (application.__parent__.solutionPrefs && !solutionPrefs.config.lockStatus) {
@@ -1750,9 +2292,17 @@ function TRIGGER_toolbar_record_navigator_set(status) {
 		
 		//record navigator status
 		if (typeof arguments[0] == 'boolean') {
-			var rnStatus = solutionPrefs.config.recordNavigatorStatus = arguments[0]
+			var rnStatus = 
+			solutionPrefs.config.recordNavigatorStatus = 
+				arguments[0]
 		}
 		else {
+			//webclient, get the actual length of this bar
+			if (solutionPrefs.config.webClient && (!maxWidth || typeof parseInt(maxWidth) != 'number')) {
+				plugins.WebClientUtils.executeClientSideJS('var selector = $(".gfxRecNavigator"); var recNavWidth = (selector.length) ? selector.width() : 0;', TRIGGER_toolbar_record_navigator_set, [null,'recNavWidth'])
+				return
+			}
+			
 			var rnStatus = solutionPrefs.config.recordNavigatorStatus
 		}
 		
@@ -1808,7 +2358,9 @@ function TRIGGER_toolbar_record_navigator_set(status) {
 			****************************/
 			
 			//figure out record object display length
-			var maxWidth		= forms[formNameRN].elements.obj_records_max.getWidth()
+			if (!maxWidth) {
+				maxWidth = forms[formNameRN].elements.obj_records_max.getWidth()
+			}
 			
 			var recordDivisor	= (thisIndex / loaded) ? thisIndex / loaded : 0
 			var recordWidth		= maxWidth * recordDivisor
@@ -1942,8 +2494,8 @@ function TRIGGER_tooltip_help_popup(tabPanelName,formName,elemName) {
 	}
 	
 	var tabPanelName = arguments[0] || 'tab_detail'
-	var formName = application.getMethodTriggerFormName() || arguments[1]
-	var elemName = application.getMethodTriggerElementName() || arguments[2]
+	var formName = arguments[1] || application.getMethodTriggerFormName()
+	var elemName = arguments[2] || application.getMethodTriggerElementName()
 	
 	if (application.__parent__.solutionPrefs) {
 		//there is a default language configured
@@ -1953,10 +2505,11 @@ function TRIGGER_tooltip_help_popup(tabPanelName,formName,elemName) {
 				var tabFormName = forms[formName].elements[tabPanelName].getTabFormNameAt(forms[formName].elements[tabPanelName].tabIndex)
 				var firstFound = false
 				
-				//loop through all inline help and get the first one available
+				//loop through all inline help and get the first help one available
 				for (var j in solutionPrefs.i18n[solutionPrefs.config.language][tabFormName]) {
-					if (!firstFound) {
+					if (solutionPrefs.i18n[solutionPrefs.config.language][tabFormName][j].help) {
 						firstFound = solutionPrefs.i18n[solutionPrefs.config.language][tabFormName][j].inlineHelp
+						break
 					}
 				}
 				
@@ -1964,26 +2517,42 @@ function TRIGGER_tooltip_help_popup(tabPanelName,formName,elemName) {
 				if (firstFound) {
 					globals.CODE_text = firstFound
 					forms.CODE_P__text.elements.lbl_header.text = 'Inline help'
-					globals.CODE_form_in_dialog(forms.CODE_P__text,-1,-1,-1,-1,' ',true,false,'inlineHelp')
+						
+					//show window when not already showing
+					if (!application.getWindow('inlineHelp')) {
+						globals.CODE_form_in_dialog(forms.CODE_P__text,-1,-1,-1,-1,' ',true,false,'inlineHelp',false)
+					}
+					//make sure correct field displayed
+					else {
+						forms.CODE_P__text.FORM_on_show()
+					}
 				}
 			}
 			//check to see that there is additional help for this element
 			else if (solutionPrefs.i18n[solutionPrefs.config.language][formName] && solutionPrefs.i18n[solutionPrefs.config.language][formName][elemName] && solutionPrefs.i18n[solutionPrefs.config.language][formName][elemName].inlineHelp) {
 				globals.CODE_text = solutionPrefs.i18n[solutionPrefs.config.language][formName][elemName].inlineHelp
 				forms.CODE_P__text.elements.lbl_header.text = 'Inline help'
-				globals.CODE_form_in_dialog(forms.CODE_P__text,-1,-1,-1,-1,' ',true,false,'inlineHelp')
+					
+				//show window when not already showing
+				if (!application.getWindow('inlineHelp')) {
+					globals.CODE_form_in_dialog(forms.CODE_P__text,-1,-1,-1,-1,' ',true,false,'inlineHelp',false)
+				}
+				//make sure correct field displayed
+				else {
+					forms.CODE_P__text.FORM_on_show()
+				}
 			}
 		}
 		//no default language set up; abort
 		else {
-			plugins.dialogs.showErrorDialog(
+			globals.DIALOGS.showErrorDialog(
 							'Error',
 							'No default language is specified'
 					)
 		}
 	}
 	else {
-		plugins.dialogs.showErrorDialog(
+		globals.DIALOGS.showErrorDialog(
 							'Error',
 							'Inline help/tooltips only work when in Data Sutra'
 					)
@@ -2988,7 +3557,7 @@ if (fileName) {
 		var fileSize = plugins.file.getFileSize(qualifiedFileName)
 		
 		if (fileSize > 2 * (1024 * 1024)) {
-			var proceed = plugins.dialogs.showQuestionDialog('Large file','The file selected is over 2 mb.  Continue?','Yes','No')
+			var proceed = globals.DIALOGS.showQuestionDialog('Large file','The file selected is over 2 mb.  Continue?','Yes','No')
 		}
 		else {
 			var proceed = 'Yes'
@@ -3551,7 +4120,7 @@ if (typeof newMethod == 'func' + 'tion' && application.getApplicationType() == 2
 	}
 	
 	//debugging
-	//plugins.dialogs.showErrorDialog('Overwritten')
+	//globals.DIALOGS.showErrorDialog('Overwritten')
 	return true
 }
 else {
@@ -4166,12 +4735,24 @@ function CODE_sort_dd_array()
 
 var a = arguments[0]
 var b = arguments[1]
+
 var fieldName = globals.CODE_ddarray_field
+var direction = new Array()
+switch (globals.CODE_ddarray_sort) {
+	case 'asc':
+		direction[0] = -1
+		direction[1] = 1
+		break
+	case 'desc':
+		direction[0] = 1
+		direction[1] = -1
+		break
+}
 
 var x = a[fieldName] //.toLowerCase()
 var y = b[fieldName] //.toLowerCase()
 
-return ((x < y) ? -1 : ((x > y) ? 1 : 0))
+return ((x < y) ? direction[0] : ((x > y) ? direction[1] : 0))
 
 }
 
@@ -4428,8 +5009,41 @@ function CODE_workspace_data()
 	var workspace = plugins.sutra.getWorkspace().substr(5)
 	var modules = plugins.file.getFolderContents(workspace, null, 2)
 	
+	
+	//loop over all modules and find the currently activated one
 	for (var i = 0; i < modules.length; i++) {
 		var module = modules[i]
+		if (module.getName() == application.getSolutionName()) {
+			var parentModule = module
+			
+			//get child modules to loop over
+			var settings = plugins.file.readTXTFile(parentModule.getAbsolutePath() + '/solution_settings.obj')
+			
+			settings = settings.split(',\n')
+			
+			for (var k = 0; k < settings.length; k++) {
+				if (utils.stringPosition(settings[k], 'modulesNames:"', 0, 1) == 1) {
+					var childModules = settings[k].substring(14,settings[k].length - 1)
+					childModules = childModules.split(',')
+					
+					//tack on parent module
+					childModules.unshift(parentModule.getName())
+					break
+				}
+			}
+			
+			break
+		}
+	}
+	
+	for (var i = 0; i < modules.length; i++) {
+		var module = modules[i]
+		
+		//check to make sure that we're only working with child modules
+//		if (childModules && childModules.indexOf(module.getName()) == -1) {
+//			continue
+//		}
+		
 		//var contents = plugins.file.getFolderContents(module)
 		
 		if (tano) {
@@ -4678,7 +5292,7 @@ function CODE_workspace_data()
 	
 	//save it
 		if (application.__parent__.solutionPrefs && solutionPrefs.repository && solutionPrefs.repository.workspace && 
-			((/*nonRef &&*/ solutionPrefs.clientInfo.typeServoy == 'developer') ? true : false)
+			((/*nonRef &&*/ (solutionPrefs.clientInfo.typeServoy == 'developer' || solutionPrefs.clientInfo.typeServoy == 'web client developer')) ? true : false)
 			) {
 		solutionPrefs.repository.workspace = vlForm
 		solutionPrefs.repository.relations = vlReln
@@ -4821,524 +5435,103 @@ if (repositoryPrefs.allModules.length) {
 }
 
 /**
+ * Reference to new method
+ * @deprecated
  *
- * @properties={typeid:24,uuid:"c1c626b7-62aa-4d7f-8536-346ae9dd5fd0"}
+ * @param {JSEvent} event
+ *
+ * @properties={typeid:24,uuid:"B16736CE-B7ED-42A5-AAAA-93190A841940"}
  */
-function TAB_btn_actions_list()
-{
-
-/*
- *	TITLE    :	TAB_actions_list
- *			  	
- *	MODULE   :	rsrc_CODE_sutra
- *			  	
- *	ABOUT    :	uses ACTIONS_list() from the currently selected tab
- *			  	
- *	INPUT    :	ALL inputs are optional
- *			  	1)	form name with tab panel
- *			  	2)	tab panel name
- *			  	
- *	OUTPUT   :	
- *			  	
- *	REQUIRES :	
- *			  	
- *	MODIFIED :	January 5, 2009 -- Troy Elliott, Data Mosaic
- *			  	
- */
-
-//MEMO: need to somehow put this section in a Function of it's own
-//running in Tano...strip out jsevents for now
-if (utils.stringToNumber(application.getVersion()) >= 5) {
-	//cast Arguments to array
-	var Arguments = new Array()
-	for (var i = 0; i < arguments.length; i++) {
-		Arguments.push(arguments[i])
-	}
-	
-	//reassign arguments without jsevents
-	arguments = Arguments.filter(globals.CODE_jsevent_remove)
-}
-
-var formName = (arguments[0]) ? arguments[0] : application.getMethodTriggerFormName()
-var tabPanelName = (arguments[1]) ? arguments[1] : 'tab_detail'
-
-//if there is a tabpanel on the selected form
-if (forms[formName] && forms[formName].elements[tabPanelName]) {
-	var tabFormName = forms[formName].elements[tabPanelName].getTabFormNameAt(forms[formName].elements[tabPanelName].tabIndex)
-	
-	//if there is a form in this tab position and it has an ACTIONS_list method on it
-	if (forms[tabFormName] && forms[tabFormName].ACTIONS_list) {
-		var elem = forms[formName].elements[application.getMethodTriggerElementName()]
-		
-		//pass the actions_list sub method the element that called it
-		forms[tabFormName].ACTIONS_list(elem)
-	}
-}
+function TAB_btn_actions_list(event,arg1) {
+	scopes.TAB.GRID_actions(event,arg1)
 }
 
 /**
+ * Reference to new method
+ * @deprecated
  *
- * @properties={typeid:24,uuid:"d7d0db6e-a736-4395-a0e3-da757d161a37"}
+ * @param {JSEvent} event
+ *
+ * @properties={typeid:24,uuid:"96825750-E40B-4C74-A8F4-5D03F0FEC951"}
  */
-function TAB_btn_rec_new()
-{
-
-/*
- *	TITLE    :	TAB_actions_list
- *			  	
- *	MODULE   :	rsrc_CODE_sutra
- *			  	
- *	ABOUT    :	uses ACTIONS_list() from the currently selected tab
- *			  	
- *	INPUT    :	ALL inputs are optional
- *			  	1)	form name with tab panel
- *			  	2)	tab panel name
- *			  	
- *	OUTPUT   :	
- *			  	
- *	REQUIRES :	
- *			  	
- *	MODIFIED :	October 6, 2008 -- Troy Elliott, Data Mosaic
- *			  	
- */
-
-//MEMO: need to somehow put this section in a Function of it's own
-//running in Tano...strip out jsevents for now
-if (utils.stringToNumber(application.getVersion()) >= 5) {
-	//cast Arguments to array
-	var Arguments = new Array()
-	for (var i = 0; i < arguments.length; i++) {
-		Arguments.push(arguments[i])
-	}
-	
-	//reassign arguments without jsevents
-	arguments = Arguments.filter(globals.CODE_jsevent_remove)
-}
-
-var formName = (arguments[0]) ? arguments[0] : application.getMethodTriggerFormName()
-var tabPanelName = (arguments[1]) ? arguments[1] : 'tab_detail'
-
-//if there is a tabpanel on the selected form
-if (forms[formName] && forms[formName].elements[tabPanelName]) {
-	var tabFormName = forms[formName].elements[tabPanelName].getTabFormNameAt(forms[formName].elements[tabPanelName].tabIndex)
-	
-	//if there is a form in this tab position and it has an REC_new method on it
-	if (forms[tabFormName] && forms[tabFormName].REC_new) {
-		var elem = forms[formName].elements[application.getMethodTriggerElementName()]
-
-		//pass the new record method the element that called it
-		forms[tabFormName].REC_new(elem)
-	}
-}
+function TAB_btn_help(event,arg1) {
+	scopes.TAB.GRID_help(event,arg1)
 }
 
 /**
+ * Reference to new method
+ * @deprecated
  *
- * @properties={typeid:24,uuid:"1d11e845-6036-42a2-8367-5c8d524edad3"}
+ * @param {JSEvent} event
+ *
+ * @properties={typeid:24,uuid:"FACB9D45-A3DB-4A98-B18F-C3F1236E38E7"}
  */
-function TAB_change_grid()
-{
-
-/*
- *	TITLE    :	TAB_change_grid
- *			  	
- *	MODULE   :	rsrc_CODE_sutra
- *			  	
- *	ABOUT    :	change tabIndex and all associated labels
- *			  		- finds the colors of a selected/unselected tab and then goes to work
- *			  		- if tab controller label has text, but no tooltip, set tooltip with value of text
- *			  	
- *	INPUT    :	ALL inputs are optional
- *			  	1)	form name with tab panel
- *			  	2)	tab to be activated eg. 'tab_d1'
- *			  	3)	name of tab panel
- *			  	4)	prefix on all tab labels
- *			  	5)	btn_add name
- *			  	6)	btn_actions name
- *			  	7)	btn_help name
- *			  	8)	btn_divider name
- *			  	
- *	OUTPUT   :	
- *			  	
- *	REQUIRES :	tab panel named 'tab_detail', labels named 'tab_d'+[1,2,...n]
- *			  	
- *	MODIFIED :	August 5, 2009 -- Troy Elliott, Data Mosaic
- *			  	
- */
-
-//MEMO: need to somehow put this section in a Function of it's own
-//running in Tano...strip out jsevents for now
-if (utils.stringToNumber(application.getVersion()) >= 5) {
-	//cast Arguments to array
-	var Arguments = new Array()
-	for (var i = 0; i < arguments.length; i++) {
-		Arguments.push(arguments[i])
-	}
-	
-	//reassign arguments without jsevents
-	arguments = Arguments.filter(globals.CODE_jsevent_remove)
-}
-
-var formName = (arguments[0]) ? arguments[0] : application.getMethodTriggerFormName()
-var buttonName = (arguments[1]) ? arguments[1] : application.getMethodTriggerElementName()
-var tabPanelName = (arguments[2]) ? arguments[2] : 'tab_detail'
-var prefix = (arguments[3]) ? arguments[3] : 'tab_d'
-var btnAdd = (arguments[4]) ? arguments[4] : 'btn_add'
-var btnActions = (arguments[5]) ? arguments[5] : 'btn_actions'
-var btnHelp = (arguments[6]) ? arguments[6] : 'btn_help'
-var lblDivider = (arguments[7]) ? arguments[7] : 'lbl_' + tabPanelName + '_divider'
-
-//make sure that element clicked is actually a custom tab controller
-if (!utils.stringPatternCount(buttonName,prefix)) {
-	return
-}
-
-//get number of tabs
-var tabTotal = forms[formName].elements[tabPanelName].getMaxTabIndex()
-
-//this tab panel doesn't have any tabs, try to still work
-if (!tabTotal) {
-	return
-}
-
-//get current tab
-var currentTab = forms[formName].elements[tabPanelName].tabIndex
-
-//get foreground/background color
-var foreSelect = forms[formName].elements[prefix + currentTab].fgcolor
-var backSelect = forms[formName].elements[prefix + currentTab].bgcolor
-//if not tab 1, get from itself and previous
-if (currentTab > 1) {
-	var foreUnselect = forms[formName].elements[prefix + (currentTab - 1)].fgcolor
-	var backUnselect = forms[formName].elements[prefix + (currentTab - 1)].bgcolor
-}
-//if not last tab, get from itself and next
-else if (currentTab < tabTotal) {
-	var foreUnselect = forms[formName].elements[prefix + (currentTab + 1)].fgcolor
-	var backUnselect = forms[formName].elements[prefix + (currentTab + 1)].bgcolor
-}
-//only one tab, do not need unselected values
-else if (currentTab == tabTotal && currentTab == 1) {
-	var foreUnselect = forms[formName].elements[prefix + currentTab].fgcolor
-	var backUnselect = forms[formName].elements[prefix + currentTab].bgcolor
-}
-//break out of method, something is not set up correctly
-else {
-	return
-}
-
-//get font string (font,normal/bold/italic/bolditalic,size)
-if (application.__parent__.solutionPrefs) {
-	//on a mac
-	if (solutionPrefs.clientInfo.typeOS == 'Mac OS X') {
-		var fontSelect = 'Verdana,1,10'
-		var fontUnselect = 'Verdana,0,10'
-	}
-	//on windows, linux, etc.
-	else {
-		var fontSelect = 'Tahoma,1,11'
-		var fontUnselect = 'Tahoma,0,11'	
-	}
-}
-//use mac settings when not running in the shell //TODO: change to windows settings when deployed
-else {
-	var fontSelect = 'Verdana,1,10'
-	var fontUnselect = 'Verdana,0,10'
-}
-
-//activate correct tab and flip tab buttons
-for ( var i = 1 ; i <= tabTotal ; i++ ) {	
-	var tabName = prefix + i
-	if (buttonName == tabName) {
-		forms[formName].elements[tabName].fgcolor = foreSelect
-		forms[formName].elements[tabName].bgcolor = backSelect
-		forms[formName].elements[tabName].setFont(fontSelect)
-		
-		//set tab index
-		forms[formName].elements[tabPanelName].tabIndex = i
-		
-		//set tooltip text if element can take a tooltip, tooltip is not already set, and tab has text
-		if (typeof forms[formName].elements[tabName].toolTipText != undefined && 
-			!forms[formName].elements[tabName].toolTipText && 
-			typeof forms[formName].elements[tabName].text != undefined && 
-			forms[formName].elements[tabName].text) {
-			
-			forms[formName].elements[tabName].toolTipText = forms[formName].elements[tabName].text
-		}
-		
-		//show/hide + button
-		var tabFormName = forms[formName].elements[tabPanelName].getTabFormNameAt(i)
-		if (forms[tabFormName]) {
-			var showAdd = (forms[tabFormName].REC_new) ? true : false
-			var showActions = (forms[tabFormName].ACTIONS_list) ? true : false
-			var showDivider = showAdd && showActions
-			var showHelp = false
-			if (application.__parent__.solutionPrefs && solutionPrefs.i18n && solutionPrefs.config.language && solutionPrefs.i18n[solutionPrefs.config.language][tabFormName]) {
-				showHelp = true
-				
-				//get the bloody tooltip
-				for (var k in solutionPrefs.i18n[solutionPrefs.config.language][tabFormName]) {
-					//only get the first help tip
-					if (!helpTip) {
-						var helpTip = solutionPrefs.i18n[solutionPrefs.config.language][tabFormName][k].toolTip
-					}
-				}	
-			}
-			
-			if (forms[formName].elements[btnAdd]) {
-				forms[formName].elements[btnAdd].visible = showAdd
-			}
-			if (forms[formName].elements[btnActions]) {
-				forms[formName].elements[btnActions].visible = showActions
-			}
-			if (forms[formName].elements[btnHelp]) {
-				forms[formName].elements[btnHelp].visible = showHelp
-				
-				//showHelp enabled and element can take a tooltip, set tooltip text
-				if (showHelp && typeof forms[formName].elements[btnHelp].toolTipText != undefined) {
-					forms[formName].elements[btnHelp].toolTipText = helpTip
-				}
-			}
-			if (forms[formName].elements[lblDivider]) {
-				forms[formName].elements[lblDivider].visible = showDivider
-			}
-		}
-		
-		/*	//TODO: what to do if there is a title header?
-		//put line on tab panel if tab's form is in solution and type is table
-		var tabFormName = forms[formName].elements[tabPanelName].getTabFormNameAt(i)
-		if (forms[tabFormName] && forms[tabFormName].controller.view == 3) {
-			forms[formName].elements[tabPanelName].setBorder('MatteBorder,1,0,0,0,#808080')
-		}
-		//set default border type
-		else {
-			forms[formName].elements[tabPanelName].setBorder('EmptyBorder,0,0,0,0')
-		}
-		*/
-	}
-	else {
-		forms[formName].elements[tabName].fgcolor = foreUnselect
-		forms[formName].elements[tabName].bgcolor = backUnselect
-		forms[formName].elements[tabName].setFont(fontUnselect)
-		
-		//set tooltip text if element can take a tooltip, tooltip is not already set, and tab has text
-		if (typeof forms[formName].elements[tabName].toolTipText != undefined && 
-			!forms[formName].elements[tabName].toolTipText && 
-			typeof forms[formName].elements[tabName].text != undefined && 
-			forms[formName].elements[tabName].text) {
-			
-			forms[formName].elements[tabName].toolTipText = forms[formName].elements[tabName].text
-		}
-		
-	}				
-}
-
-
-
+function TAB_btn_rec_new(event,arg1) {
+	scopes.TAB.GRID_new(event,arg1)
 }
 
 /**
+ * Reference to new method
+ * @deprecated
  *
- * @properties={typeid:24,uuid:"54fc4dcd-e1b8-441b-8fac-a32764a63b54"}
+ * @param {JSEvent} event
+ *
+ * @properties={typeid:24,uuid:"7B91A5A9-3A3F-44B7-B1E8-2FC00B2A3D97"}
  */
-function TAB_change_grid_init()
-{
-
-/*
- *	TITLE    :	TAB_change_grid_init
- *			  	
- *	MODULE   :	rsrc_CODE_sutra
- *			  	
- *	ABOUT    :	change tabIndex and all associated labels
- *			  		-finds the colors of a selected/unselected tab and then goes to work
- *			  	
- *	INPUT    :	ALL inputs are optional
- *			  	1)	form name with tab panel
- *			  	2)	tab to be activated eg. 'tab_d1'
- *			  	3)	name of tab panel
- *			  	4)	prefix on all tab labels
- *			  	5)	btn_add name
- *			  	6)	btn_actions name
- *			  	7)	btn_help name
- *			  	8)	btn_divider name
- *			  	
- *	OUTPUT   :	
- *			  	
- *	REQUIRES :	
- *			  	
- *	MODIFIED :	October 6, 2008 -- Troy Elliott, Data Mosaic
- *			  	
- */
-
-//MEMO: need to somehow put this section in a Function of it's own
-//running in Tano...strip out jsevents for now
-if (utils.stringToNumber(application.getVersion()) >= 5) {
-	//cast Arguments to array
-	var Arguments = new Array()
-	for (var i = 0; i < arguments.length; i++) {
-		Arguments.push(arguments[i])
-	}
-	
-	//reassign arguments without jsevents
-	arguments = Arguments.filter(globals.CODE_jsevent_remove)
-}
-
-var formName = (arguments[0]) ? arguments[0] : application.getMethodTriggerFormName()
-var tabPanelName = (arguments[2]) ? arguments[2] : 'tab_detail'
-var prefix = (arguments[3]) ? arguments[3] : 'tab_d'
-var buttonName = (arguments[1]) ? arguments[1] : prefix + '1'
-var btnAdd = (arguments[4]) ? arguments[4] : 'btn_add'
-var btnActions = (arguments[5]) ? arguments[5] : 'btn_actions'
-var btnHelp = (arguments[6]) ? arguments[6] : 'btn_help'
-var lblDivider = (arguments[7]) ? arguments[7] : 'lbl_' + tabPanelName + '_divider'
-
-if (forms[formName] && forms[formName].elements[tabPanelName]) {
-	globals.TAB_change_grid(formName,buttonName,tabPanelName,prefix,btnAdd,btnActions,btnHelp,lblDivider)
-}
+function TAB_change_grid(event,arg2,arg3,arg4,arg5,arg6,arg7,arg8) {
+	scopes.TAB.GRID_change(event,arg2,arg3,arg4,arg5,arg6,arg7,arg8)
 }
 
 /**
+ * Reference to new method
+ * @deprecated
  *
- * @properties={typeid:24,uuid:"15b31c9f-f3b0-4efb-ba8f-4f3163c962b2"}
+ * @param {JSEvent} event
+ *
+ * @properties={typeid:24,uuid:"8756E1DB-B872-45F5-BB9B-3C5F68560C59"}
  */
-function TAB_change_inline()
-{
+function TAB_change_grid_init(event,arg2,arg3,arg4,arg5,arg6,arg7,arg8) {
+	scopes.TAB.GRID_init(event,arg2,arg3,arg4,arg5,arg6,arg7,arg8)
+}
 
-/*
- *	TITLE    :	TAB_change_inline
- *			  	
- *	MODULE   :	rsrc_CODE_sutra
- *			  	
- *	ABOUT    :	change tabIndex and all associated labels
- *			  		-finds the colors of a selected/unselected tab and then goes to work
- *			  	activates action buttons for log and detail tab panels 
- *			  	
- *	INPUT    :	ALL inputs are optional
- *			  	1)	form name with tab panel
- *			  	2)	tab to be activated eg. 'tab_d1'
- *			  	3)	name of tab panel
- *			  	4)	prefix on all tab labels
- *			  	
- *	OUTPUT   :	
- *			  	
- *	REQUIRES :	tab panel named 'tab_detail', labels named 'tab_d'+[1,2,...n]
- *			  	
- *	MODIFIED :	Dec 6, 2007 -- Troy Elliott, Data Mosaic
- *			  	
+/**
+ * Reference to new method
+ * @deprecated
+ *
+ * @param {String} formName
+ * @param {String} elemName
+ * @param {String} tabPanel
+ * @param {String} prefix
+ *
+ * @properties={typeid:24,uuid:"CA58A6E0-7D8F-4AAC-9093-266DA7EAC6F8"}
  */
-
-//MEMO: need to somehow put this section in a Function of it's own
-//running in Tano...strip out jsevents for now
-if (utils.stringToNumber(application.getVersion()) >= 5) {
-	//cast Arguments to array
-	var Arguments = new Array()
-	for (var i = 0; i < arguments.length; i++) {
-		Arguments.push(arguments[i])
-	}
-	
-	//reassign arguments without jsevents
-	arguments = Arguments.filter(globals.CODE_jsevent_remove)
+function TAB_change_inline(formName,elemName,tabPanel,prefix) {
+	scopes.TAB.INLINE_change(formName,elemName,tabPanel,prefix)
 }
 
-var formName = (arguments[0]) ? arguments[0] : application.getMethodTriggerFormName()
-var buttonName = (arguments[1]) ? arguments[1] : application.getMethodTriggerElementName()
-var tabPanelName = (arguments[2]) ? arguments[2] : 'tab_detail'
-var prefix = (arguments[3]) ? arguments[3] : 'tab_d'
-
-//get number of tabs
-var tabTotal = forms[formName].elements[tabPanelName].getMaxTabIndex()
-
-//get current tab
-var currentTab = forms[formName].elements[tabPanelName].tabIndex
-
-//get foreground/background color
-var foreSelect = forms[formName].elements[prefix + currentTab].fgcolor
-var backSelect = forms[formName].elements[prefix + currentTab].bgcolor
-//if not tab 1, get from itself and previous
-if (currentTab > 1) {
-	var foreUnselect = forms[formName].elements[prefix + (currentTab - 1)].fgcolor
-	var backUnselect = forms[formName].elements[prefix + (currentTab - 1)].bgcolor
-}
-//if not last tab, get from itself and next
-else if (currentTab < tabTotal) {
-	var foreUnselect = forms[formName].elements[prefix + (currentTab + 1)].fgcolor
-	var backUnselect = forms[formName].elements[prefix + (currentTab + 1)].bgcolor
-}
-//only one tab, do not need unselected values
-else if (currentTab == tabTotal && currentTab == 1) {
-	var foreUnselect = forms[formName].elements[prefix + currentTab].fgcolor
-	var backUnselect = forms[formName].elements[prefix + currentTab].bgcolor
-}
-//break out of method, something is not set up correctly
-else {
-	return
-}
-
-//get font string (font,normal/bold/italic/bolditalic,size)
-if (application.__parent__.solutionPrefs) {
-	//on a mac
-	if (solutionPrefs.clientInfo.typeOS == 'Mac OS X') {
-		var fontSelect = 'Verdana,1,10'
-		var fontUnselect = 'Verdana,0,10'
-	}
-	//on windows, linux, etc.
-	else {
-		var fontSelect = 'Tahoma,1,11'
-		var fontUnselect = 'Tahoma,0,11'	
-	}
-}
-//use mac settings when not running in the shell //TODO: change to windows settings when deployed
-else {
-	var fontSelect = 'Verdana,1,10'
-	var fontUnselect = 'Verdana,0,10'
-}
-
-
-
-//activate correct tab and flip tab buttons
-for ( var i = 1 ; i <= tabTotal ; i++ ) {	
-	var tabName = prefix + i
-	if (buttonName == tabName) {
-		forms[formName].elements[tabName].fgcolor = foreSelect
-		forms[formName].elements[tabName].bgcolor = backSelect
-		forms[formName].elements[tabName].setFont(fontSelect)
-		
-		//set tab index
-		forms[formName].elements[tabPanelName].tabIndex = i
-		
-		/*	//TODO: what to do if there is a title header?
-		//put line on tab panel if tab's form is in solution and type is table
-		var tabFormName = forms[formName].elements[tabPanelName].getTabFormNameAt(i)
-		if (forms[tabFormName] && forms[tabFormName].controller.view == 3) {
-			forms[formName].elements[tabPanelName].setBorder('MatteBorder,1,0,0,0,#808080')
-		}
-		//set default border type
-		else {
-			forms[formName].elements[tabPanelName].setBorder('EmptyBorder,0,0,0,0')
-		}
-		*/
-	}
-	else {
-		forms[formName].elements[tabName].fgcolor = foreUnselect
-		forms[formName].elements[tabName].bgcolor = backUnselect
-		forms[formName].elements[tabName].setFont(fontUnselect)
-	}				
-}
-
-
-
+/**
+ * Reference to new method
+ * @deprecated
+ *
+ * @param {JSEvent} event
+ *
+ * @properties={typeid:24,uuid:"70C1A10F-80DB-4F65-9DC7-5CFA837CB9DE"}
+ */
+function TAB_change_set(event,arg1) {
+	scopes.TAB.SET_change(event,arg1)
 }
 
 /**
  * Navigates to the specified sidebar if it is available for the logged in user.
  * 
  * @param	{String}	sidebarName Sidebar name to jump to (defined in sidebar config "tab name").
+ * @param 	{Boolean} 	[showSidebar] Force sidebar open/closed.
  * 
  * @returns	{Boolean}	Sidebar able to be changed.
  * 
  * @properties={typeid:24,uuid:"8EC7C55E-6B55-43D5-9693-897E32EA0884"}
  */
-function TRIGGER_sidebar_set(newToolbar, showSidebar) {
+function TRIGGER_sidebar_set(sidebarName, showSidebar) {
 	//solutionPrefs defined and frameworks not in a locked status
 	if (application.__parent__.solutionPrefs && !solutionPrefs.config.lockStatus) {
 	
@@ -5352,14 +5545,14 @@ function TRIGGER_sidebar_set(newToolbar, showSidebar) {
 			//check to make sure that newToolbar is a valid input
 			var found = false
 			for (var i = 0; i < allToolbars.length && !found; i++) {
-				if (allToolbars[i].tabName == newToolbar) {
+				if (allToolbars[i].tabName == sidebarName) {
 					found = true
 					break
 				}
 			}
 	
 			//destination toolbar is valid and different than current toolbar, change
-			if (newToolbar != oldToolbar && found) {
+			if (sidebarName != oldToolbar && found) {
 				//should this by i or i+1?
 				forms.DATASUTRA__sidebar__header.TAB_popdown(i + 1)
 				
@@ -5397,65 +5590,6 @@ function _1() {
 }
 
 /**
- * @properties={typeid:24,uuid:"05CA6E53-E55F-4F8E-84F3-E436986B9FD5"}
- */
-function TAB_change_set(input, formParent) {
-	if (!formParent) {
-		var formName = application.getMethodTriggerFormName()
-		var elem = forms[formName].elements[application.getMethodTriggerElementName()]
-		
-		//get parent form
-		var formStack = forms[formName].controller.getFormContext()
-		
-		//this form is included on some other form
-		if (formStack.getMaxRowIndex() > 1) {
-			formParent = formStack.getValue(formStack.getMaxRowIndex()-1,2)
-		}
-	}
-		
-	//check for form variable that sets up tab controllers
-	if (forms[formParent]) {
-		//all tabs
-		var valuelist = forms[formParent].tabSets
-		
-		//selected tab
-		var tabSelected = forms[formParent].elements.tab_sets.tabIndex
-			
-		//called to depress menu
-		if (typeof input != 'number') {
-			//set up menu with arguments
-			var menu = new Array()
-			
-			for ( var i = 0 ; i < valuelist.length ; i++ ) {
-				
-				if (i + 1 == tabSelected) {
-					menu[i] = plugins.popupmenu.createCheckboxMenuItem(valuelist[i],TAB_change_set)
-					menu[i].setMethodArguments(i + 1,formParent)
-					menu[i].setSelected(true)
-				}
-				else {
-					menu[i] = plugins.popupmenu.createMenuItem(valuelist[i],TAB_change_set)
-					menu[i].setMethodArguments(i + 1,formParent)
-				}
-				
-				if (utils.stringPatternCount(menu[i].text,'---')) {
-					menu[i].setEnabled(false)
-				}
-			}
-			
-			//popup
-			if (elem != null) {
-				plugins.popupmenu.showPopupMenu(elem, menu)
-			}
-		}
-		//menu shown and item chosen
-		else {
-			forms[formParent].elements.tab_sets.tabIndex = input
-		}
-	}
-}
-
-/**
  * Helper method to insert Data Mosaic license in all javascript files.
  * 
  * @properties={typeid:24,uuid:"43FDEA90-D609-436A-8401-3153AEA868CE"}
@@ -5464,10 +5598,17 @@ function CODE_license_insert() {
 	//prompt for a workspace directory, go through all .js files and insert a block of text with licensing info at the top
 	
 	//generic verbage
+	var thisYear = utils.dateFormat(new Date(),'yyyy')
+	
 	var licenseTop = "/**\n * @properties={typeid:35,uuid:\"DA7AE05A-1C00-"
 	var licenseStuffing = "\"}\n */\nvar _license_"
-	var licenseEnd = " = 'Copyright (C) 2006 - 2011 Data Mosaic \\\n\t\t\t\t\t\t\t\t\tAll rights reserved \\\n\t\t\t\t\t\t\t\t\t\\\n\t\t\t\t\t\t\t\t\tThe copyright of the computer program(s) herein is \\\n\t\t\t\t\t\t\t\t\tthe property of Data Mosaic. The program(s) may be used/copied \\\n\t\t\t\t\t\t\t\t\tonly with the written permission of the owner or in \\\n\t\t\t\t\t\t\t\t\taccordance with the terms and conditions stipulated in \\\n\t\t\t\t\t\t\t\t\tthe agreement/contract under which the program(s) have \\\n\t\t\t\t\t\t\t\t\tbeen supplied.';\n\n"
+	var licenseEnd = " = 'Data Sutra is everything you need to build a great app. \\\n\t\t\t\t\t\t\t\t\tCopyright (C) 2006 - " + thisYear + " Data Mosaic \\\n\t\t\t\t\t\t\t\t\t\\\n\t\t\t\t\t\t\t\t\tThis program is free software: you can redistribute it and/or modify \\\n\t\t\t\t\t\t\t\t\tit under the terms of the GNU Affero General Public License as \\\n\t\t\t\t\t\t\t\t\tpublished by the Free Software Foundation, either version 3 of the \\\n\t\t\t\t\t\t\t\t\tLicense, or (at your option) any later version. \\\n\t\t\t\t\t\t\t\t \t\\\n\t\t\t\t\t\t\t\t\tThis program is distributed in the hope that it will be useful, \\\n\t\t\t\t\t\t\t\t\tbut WITHOUT ANY WARRANTY; without even the implied warranty of \\\n\t\t\t\t\t\t\t\t\tMERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the \\\n\t\t\t\t\t\t\t\t\tGNU Affero General Public License for more details. \\\n\t\t\t\t\t\t\t\t\t\\\n\t\t\t\t\t\t\t\t\tYou should have received a copy of the GNU Affero General Public License \\\n\t\t\t\t\t\t\t\t\talong with this program.  If not, see <http://www.gnu.org/licenses/>.';\n\n"
+	var licenseSixPlus = '/**\n *\tData Sutra is everything you need to build a great app.\n * \tCopyright (C) 2006 - ' + thisYear + ' Data Mosaic \n *\n *\tThis program is free software: you can redistribute it and/or modify\n *\tit under the terms of the GNU Affero General Public License as\n *\tpublished by the Free Software Foundation, either version 3 of the\n *\tLicense, or (at your option) any later version.\n *\n *\tThis program is distributed in the hope that it will be useful,\n *\tbut WITHOUT ANY WARRANTY; without even the implied warranty of\n *\tMERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n *\tGNU Affero General Public License for more details.\n *\n *\tYou should have received a copy of the GNU Affero General Public License\n *\talong with this program.  If not, see <http://www.gnu.org/licenses/>.\n */\n\n'
+	
 	var cnt = 1
+	var contentJS
+	
+	var servoyVersion = utils.stringToNumber(application.getVersion())
 	
 	function padLast(sequence) {
 		var length = 12 - sequence.length
@@ -5483,13 +5624,15 @@ function CODE_license_insert() {
 	var L33T = {
 			__DATASUTRA__		: 'DA7A',
 			__datasutra__connector	: 'DAC0',
+			__datasutra_authenticator	: 'DAA0',
+			__datasutra_login		: 'DA10',
 			_ds_AC_access_control	: 'AC00',
 			_ds_CODE_resources		: 'C0DE',
 			_ds_DEV_tools			: 'DEB0',
-			_ds_NSTL_installation		: 'D470',
 			_ds_MGR_resource_manager	: 'E640',
 			_ds_NAV_engine		: '4AB0',
-			_dsa_sutra_CRM_servoy_resking	: 'C4E0',
+			_ds_NSTL_installation		: 'D470',
+			_dsa_sutra_CRM_servoy_reskin	: 'C4E0',
 			_dsa_sutra_DATE_date_picker		: 'DA1E',
 			_dsa_sutra_TMPL_forms :	 '1E47',
 			_dsa_sutra_TOOL_toolbar_sidebar	: '1007'
@@ -5510,11 +5653,19 @@ function CODE_license_insert() {
 			
 			//if this 'module' has globals
 			if (globalJS) {
-				//C0DE-1111-00000000000001
-				var sequence = utils.numberFormat(cnt++,'#')
-				var twenty = L33T[moduleName] + '-' + '1111' + '-' + padLast(sequence)
-				
-				var contentJS = licenseTop + twenty + licenseStuffing + moduleName + licenseEnd + globalJS
+				//insert license as form variable
+				if (servoyVersion < 6) {
+					//C0DE-1111-00000000000001
+					var sequence = utils.numberFormat(cnt++,'#')
+					var twenty = L33T[moduleName] + '-' + '1111' + '-' + padLast(sequence)
+					
+					contentJS = licenseTop + twenty + licenseStuffing + moduleName + licenseEnd + globalJS
+				}
+				//insert license as comment, like it should be
+				else {
+					contentJS = licenseSixPlus + globalJS
+					cnt++
+				}
 				
 				plugins.file.writeTXTFile(module.getAbsolutePath() + '/globals.js',contentJS)
 			}
@@ -5525,18 +5676,30 @@ function CODE_license_insert() {
 				for (var j = 0; j < formsJS.length; j++) {
 					var formJS = formsJS[j]
 					
-					//C0DE-1111-00000000000001
-					var sequence = utils.numberFormat(cnt++,'#')
-					var twenty = L33T[moduleName] + '-' + '1111' + '-' + padLast(sequence)
-					
-					var contentJS = licenseTop + twenty + licenseStuffing + moduleName + licenseEnd + plugins.file.readTXTFile(formJS)
+					//insert license as form variable
+					if (servoyVersion < 6) {
+						//C0DE-1111-00000000000001
+						var sequence = utils.numberFormat(cnt++,'#')
+						var twenty = L33T[moduleName] + '-' + '1111' + '-' + padLast(sequence)
+						
+						contentJS = licenseTop + twenty + licenseStuffing + moduleName + licenseEnd + plugins.file.readTXTFile(formJS)
+					}
+					//insert license as comment, like it should be
+					else {
+						contentJS = licenseSixPlus + plugins.file.readTXTFile(formJS)
+						cnt++
+					}
 					
 					plugins.file.writeTXTFile(formJS,contentJS)
 				}
 			}
 		}
 		
-		plugins.dialogs.showInfoDialog('Completed','Licensing text has been inserted in all ' + cnt - 1 + '.js files.')
+		if (application.isInDeveloper() && application.getApplicationType() == APPLICATION_TYPES.SMART_CLIENT) {
+			plugins.dialogs.showInfoDialog('Completed','Licensing text has been inserted in all ' + cnt - 1 + '.js files.')
+		}
+		//bug with continuations and file plugin?
+//		globals.DIALOGS.showInfoDialog('Completed','Licensing text has been inserted in all ' + cnt - 1 + '.js files.')
 	}
 }
 
@@ -5563,7 +5726,8 @@ function TRIGGER_ul_tab_list(input,itemName,tabSelected) {
 		
 		//tack on the selected UL to the top of the pop-down
 		valueList.unshift(navigationPrefs.byNavItemID[solutionPrefs.config.currentFormID].universalList.displays[navigationPrefs.byNavItemID[solutionPrefs.config.currentFormID].universalList.displays.displayPosn].listTitle || navigationPrefs.byNavItemID[solutionPrefs.config.currentFormID].navigationItem.fwListTitle)
-		formNames.unshift((navigationPrefs.byNavItemID[solutionPrefs.config.currentFormID].listData.withButtons) ? 'NAV_T_universal_list' : 'NAV_T_universal_list__no_buttons')
+		var navForm = (solutionPrefs.config.webClient) ? '__WEB' : ''
+		formNames.unshift((navigationPrefs.byNavItemID[solutionPrefs.config.currentFormID].listData.withButtons) ? 'NAV_T_universal_list' + navForm : 'NAV_T_universal_list__no_buttons' + navForm)
 		
 		//called to depress menu
 		if (input instanceof JSEvent) {
@@ -5633,6 +5797,7 @@ function TRIGGER_ul_tab_list(input,itemName,tabSelected) {
 			var tabSelected = arguments[2]
 			var baseForm = solutionPrefs.config.formNameBase
 			var prefName = 'Custom tab ' + solutionPrefs.config.currentFormID + ': ' + formName
+			var listTabForm = (solutionPrefs.config.webClient) ? 'DATASUTRA_WEB_0F__list__universal' : 'DATASUTRA_0F_solution'
 			
 			if (forms[formName]) {
 				//set global that end users use in their code
@@ -5642,24 +5807,24 @@ function TRIGGER_ul_tab_list(input,itemName,tabSelected) {
 				if (formName != 'DATASUTRA_0F_solution__blank_2' && !navigationPrefs.byNavSetName.configPanes.itemsByName[prefName]) {
 					
 					//assign to list tab panel
-					forms[baseForm].elements.tab_content_B.addTab(forms[formName],'',null,null,null,null)
-					forms[baseForm].elements.tab_content_B.tabIndex = forms[baseForm].elements.tab_content_B.getMaxTabIndex()
+					forms[listTabForm].elements.tab_content_B.addTab(forms[formName],'',null,null,null,null)
+					forms[listTabForm].elements.tab_content_B.tabIndex = forms[listTabForm].elements.tab_content_B.getMaxTabIndex()
 					
 					//save status info
 					navigationPrefs.byNavSetName.configPanes.itemsByName[prefName] = new Object()
 					navigationPrefs.byNavSetName.configPanes.itemsByName[prefName].listData = {
-												tabNumber : forms[baseForm].elements.tab_content_B.tabIndex,
+												tabNumber : forms[listTabForm].elements.tab_content_B.tabIndex,
 												dateAdded : application.getServerTimeStamp()
 										}
 					
 				}
 				//blank form, set to blank tab
 				else if (formName == 'DATASUTRA_0F_solution__blank_2') {
-					forms[baseForm].elements.tab_content_B.tabIndex = 1
+					forms[listTabForm].elements.tab_content_B.tabIndex = 1
 				}
 				//set tab to this preference
 				else {
-					forms[baseForm].elements.tab_content_B.tabIndex = navigationPrefs.byNavSetName.configPanes.itemsByName[prefName].listData.tabNumber
+					forms[listTabForm].elements.tab_content_B.tabIndex = navigationPrefs.byNavSetName.configPanes.itemsByName[prefName].listData.tabNumber
 				}
 				
 				//using a custom tab, note which one it is
@@ -5691,7 +5856,8 @@ function TRIGGER_ul_tab_list(input,itemName,tabSelected) {
 function TRIGGER_ul_button_action(event) {
 	//only run if meta-objects defined
 	if (application.__parent__.navigationPrefs && application.__parent__.solutionPrefs) {
-		forms.NAV_T_universal_list.ACTIONS_list(event)
+		var navForm = (solutionPrefs.config.webClient) ? 'NAV_T_universal_list__WEB__buttons' : 'NAV_T_universal_list'
+		forms[navForm].ACTIONS_list(event)
 	}
 }
 
@@ -5705,7 +5871,8 @@ function TRIGGER_ul_button_action(event) {
 function TRIGGER_ul_button_add(event) {
 	//only run if meta-objects defined
 	if (application.__parent__.navigationPrefs && application.__parent__.solutionPrefs) {
-		forms.NAV_T_universal_list.REC_new(event)
+		var navForm = (solutionPrefs.config.webClient) ? 'NAV_T_universal_list__WEB__buttons' : 'NAV_T_universal_list'
+		forms[navForm].REC_new(event)
 	}
 }
 
@@ -5719,7 +5886,8 @@ function TRIGGER_ul_button_add(event) {
 function TRIGGER_ul_button_report(event) {
 	//only run if meta-objects defined
 	if (application.__parent__.navigationPrefs && application.__parent__.solutionPrefs) {
-		forms.NAV_T_universal_list.REPORTS_list(event)
+		var navForm = (solutionPrefs.config.webClient) ? 'NAV_T_universal_list__WEB__buttons' : 'NAV_T_universal_list'
+		forms[navForm].REPORTS_list(event)
 	}
 }
 
@@ -5733,7 +5901,8 @@ function TRIGGER_ul_button_report(event) {
 function TRIGGER_ul_button_filter(event) {
 	//only run if meta-objects defined
 	if (application.__parent__.navigationPrefs && application.__parent__.solutionPrefs) {
-		forms.NAV_T_universal_list.FILTERS_list(event)
+		var navForm = (solutionPrefs.config.webClient) ? 'NAV_T_universal_list__WEB__buttons' : 'NAV_T_universal_list'
+		forms[navForm].FILTERS_list(event)
 	}
 }
 
@@ -5741,8 +5910,22 @@ function TRIGGER_ul_button_filter(event) {
  * @properties={typeid:24,uuid:"7AF6A8AA-44C4-4ABE-9A0B-18D379BD269A"}
  */
 function CODE_cursor_busy(busyCursor) {
+	//running in webclient and logged in, commandeer servoy indicator
+	if (globals.DS_web_cursor) {
+		//web client utils plugin available
+		if (plugins.WebClientUtils) {
+			//busy cursor requested
+			if (busyCursor) {
+				plugins.WebClientUtils.executeClientSideJS('busyCursor(Wicket.indicatorPosition,true);')
+			}
+			//busy cursor request to turn off
+			else {
+				plugins.WebClientUtils.executeClientSideJS('busyCursor();')
+			}
+		}
+	}
 	//data sutra plugin available
-	if (plugins.sutra) {
+	else if (plugins.sutra) {
 		//busy cursor requested and not already on
 		if (busyCursor && ! plugins.sutra.busyCursor) {
 			plugins.sutra.busyCursor = true
@@ -6034,94 +6217,158 @@ function CODE_form_in_dialog(form, x, y, width, height, title, resizable, showTe
 	}
 	//post-6
 	else {
-		function getSize(value, defaultValue, noMinusOne) {
-			if (typeof value == 'number' && ((noMinusOne) ? value != -1 : true)) {
-				return value
-			}
-			else {
-				return defaultValue
-			}
+		//TODO: in webclient, use dialog plugin for FiDs so continuations baked in
+		if (false && solutionPrefs.config.webClient) {
+			globals.DIALOGS.showFormInModalDialog(
+					form.controller.getName(), 
+					x,
+					y,
+					width,
+					height, 
+					title, 
+					resizable, 
+					showText, 
+					name
+				)
 		}
-		
-		//didn't take window size into account unless resizable enabled; manually calculate window dimensions
-		if (utils.stringToNumber(utils.stringReplace(application.getVersion(),'.','')) < 605) {
-			var offset = 0
-			var titleBar = 0
-			//windows
-			if (utils.stringPatternCount(solutionPrefs.clientInfo.typeOS,'Windows')) {
-				var theme = plugins.sutra.getWindowsTheme()
-				
-				//todo: figure out specifically
-				titleBar = 30
-				
-				//aero
-				if (utils.stringToNumber(solutionPrefs.clientInfo.verOS) > 6 && theme != 'Classic') {
-					offset = 16
+		else {
+			function getSize(value, defaultValue, noMinusOne) {
+				if (typeof value == 'number' && ((noMinusOne) ? value != -1 : true)) {
+					return value
 				}
-				//luna
-				else if (utils.stringPatternCount(solutionPrefs.clientInfo.verOS,'5.1') && theme == 'Luna') {
-					offset = 8
-				}
-				//classic
 				else {
-					offset = 8
+					return defaultValue
 				}
-			}
-			//mac
-			else {
-				titleBar = 22
 			}
 			
 			var smForm = solutionModel.getForm(form.controller.getName())
 			
-			var totalWidth = smForm.width
+			var autoSave = databaseManager.getAutoSave()
 			
-			//offset for platform windowing
-			totalWidth += offset
-			
-			var totalHeight = 0
-			for (var i in smForm.getParts()) {
-				totalHeight += smForm.getParts()[i].height
+			//didn't take window size into account unless resizable enabled; manually calculate window dimensions
+			if (utils.stringToNumber(utils.stringReplace(application.getVersion(),'.','')) < 605) {
+				var offset = 0
+				var titleBar = 0
+				//windows
+				if (utils.stringPatternCount(solutionPrefs.clientInfo.typeOS,'Windows')) {
+					var theme = plugins.sutra.getWindowsTheme()
+					
+					//todo: figure out specifically
+					titleBar = 30
+					
+					//aero
+					if (utils.stringToNumber(solutionPrefs.clientInfo.verOS) > 6 && theme != 'Classic') {
+						offset = 16
+					}
+					//luna
+					else if (utils.stringPatternCount(solutionPrefs.clientInfo.verOS,'5.1') && theme == 'Luna') {
+						offset = 8
+					}
+					//classic
+					else {
+						offset = 8
+					}
+				}
+				//mac
+				else {
+					titleBar = 22
+				}
+				
+				var totalWidth = smForm.width
+				
+				//offset for platform windowing
+				totalWidth += offset
+				
+				var totalHeight = 0
+				for (var i in smForm.getParts()) {
+					totalHeight += smForm.getParts()[i].height
+				}
+				//offset for platform windowing
+				totalHeight += titleBar + offset
 			}
-			//offset for platform windowing
-			totalHeight += titleBar + offset
+			//can auto-calculate height-width
+			else {
+				totalWidth = -1
+				totalHeight = -1
+			}
+			
+			if (typeof resizable != 'boolean') {
+				resizable = true
+			}
+			
+			if (typeof showText != 'boolean') {
+				showText = false
+			}
+			
+			if (typeof modal != 'boolean') {
+				modal = true
+			}
+			
+			var modality = modal ? JSWindow.MODAL_DIALOG : JSWindow.DIALOG
+			
+			//check to see if this FiD already exists and remove it
+			if (application.getWindow(name)) {
+				
+				//run on hide method
+					//MEMO: must destroy window in onhide
+				if (smForm.onHide && smForm.onHide.getName() && form[smForm.onHide.getName()]) {
+					form[smForm.onHide.getName()]()
+					
+					//on hide changed the status of autosave, reset
+					if (autoSave != databaseManager.getAutoSave()) {
+						databaseManager.setAutoSave(autoSave)
+					}
+				}
+				//allow any FiDs to be hidden
+				else {
+					//needed for case when FiD shown and then navigated to other part of solution before closing
+					globals.CODE_hide_form = 1
+					
+					application.getWindow(name).destroy()
+				}
+			}
+			
+			//in webclient on an ipad, turn off indicator; fixed position is outside bounds of FiD and makes scroll bars show up
+			if (solutionPrefs.config.webClient && scopes.DS.deviceFactor == 'iPad') {
+				//there is already an onshow
+				if (smForm.onShow && smForm.onShow.getName()) {
+					//check to see that not already extended, extend
+					if (!(utils.stringPatternCount(smForm.onShow.code,'CODE_form_in_dialog_setup_ipad()')  || utils.stringPatternCount(smForm.onShow.code,'indicatorOff()'))) {
+						//first trash the form
+						solutionModel.removeForm(smForm.name)
+						
+						//now update the code
+						smForm.onShow.code = smForm.onShow.code.substr(0,smForm.onShow.code.length - 2) + ";globals.CODE_form_in_dialog_setup_ipad()" + smForm.onShow.code.substr(smForm.onShow.code.length - 2)
+						
+						//get the form again
+						form = forms[smForm.name]
+					}
+				}
+				//need new on show method
+				else {
+					//first trash the form
+					solutionModel.removeForm(smForm.name)
+					
+					//now create new on show method
+					smForm.onShow = smForm.newMethod("function FORM_on_show__DSWEBCLIENT(firstShow,event){globals.CODE_form_in_dialog_setup_ipad()}")
+					
+					//get the form again
+					form = forms[smForm.name]
+				}
+			}
+			
+			var FiD = application.createWindow(name,modality)
+			FiD.setInitialBounds(
+							getSize(x,-1),
+							getSize(y,-1),
+							getSize(width,totalWidth,true),
+							getSize(height,totalHeight,true)
+						)
+			FiD.resizable = resizable
+			FiD.showTextToolbar(showText)
+			FiD.title = title
+			FiD.show(form)
 		}
-		//can auto-calculate height-width
-		else {
-			totalWidth = -1
-			totalHeight = -1
-		}
-		
-		if (typeof resizable != 'boolean') {
-			resizable = true
-		}
-		
-		if (typeof showText != 'boolean') {
-			showText = false
-		}
-		
-		if (typeof modal != 'boolean') {
-			modal = true
-		}
-		
-		var modality = modal ? JSWindow.MODAL_DIALOG : JSWindow.DIALOG
-		
-		//check to see if this FiD already exists and remove it
-		if (application.getWindow(name)) {
-			application.getWindow(name).destroy()
-		}
-		
-		var FiD = application.createWindow(name,modality)
-		FiD.setInitialBounds(
-						getSize(x,-1),
-						getSize(y,-1),
-						getSize(width,totalWidth,true),
-						getSize(height,totalHeight,true)
-					)
-		FiD.resizable = resizable
-		FiD.showTextToolbar(showText)
-		FiD.title = title
-		FiD.show(form)
 	}
 }
 
@@ -6135,9 +6382,184 @@ function CODE_form_in_dialog(form, x, y, width, height, title, resizable, showTe
 function CODE_form_in_dialog_close(name) {
 	//pre-6
 	if (utils.stringToNumber(application.getVersion()) < 6) {
-		application.closeFormDialog(name)
+		if (application.getWindow(name) != null) {
+			application.closeFormDialog(name)
+		}
 	}
 	else {
-		application.getWindow(name).destroy()
+		if (application.getWindow(name) != null) {
+			application.getWindow(name).destroy()
+		}
 	}
+}
+
+/**
+ * Called before the form component is rendered.
+ *
+ * @param {JSRenderEvent} event the render event
+ *
+ * @properties={typeid:24,uuid:"9AC601EA-D133-45B4-B9D6-E38F7A81E4B3"}
+ */
+function CODE_row_background__list(event) {
+	var renderable = event.getRenderable()
+	
+	//set background color
+	renderable.bgcolor = '#D1D7E2'
+		
+	if (!solutionPrefs.config.webClient && renderable.getElementType() == 'CHECK') {
+		renderable.transparent = true
+	}
+	//ensure that not transparent for everything except checkboxes
+	else if (renderable.getElementType() != 'CHECK') {
+		renderable.transparent = false
+	}
+}
+/**
+ * @properties={typeid:24,uuid:"3EDF79FA-588A-4755-9B44-CCE19BEB0143"}
+ */
+function CODE_appserver_get(hostName) {
+//	var appURL = ''
+//		
+//	if (application.getApplicationType() == APPLICATION_TYPES.WEB_CLIENT) {
+//		//get url using callback
+//		if (!hostName) {
+//			plugins.WebClientUtils.executeClientSideJS('var host = window.top.location.host;', globals.CODE_appserver_get, ['host'])
+//			var kont = new Continuation()
+//			application.output(kont)
+//			return kont
+//		}
+////		//have path, figure out where to navigate to
+////		else {
+////			if (globals.CODE_continuation) {
+////				var c = globals.CODE_continuation
+////				globals.CODE_continuation = null
+////				globals.CODE_continuation_value = hostName
+////				c()
+////			}
+////		}
+////	}
+//	else {
+//		appURL = application.getServerURL().substr(7)
+//	}
+//	
+//	application.output(appURL)
+//	return appURL
+
+//	another try
+//application.output('hello world 1')
+//
+////store method stack
+//globals.CODE_continuation = new Continuation()
+//
+////halt
+//new Continuation()()
+//
+//application.output('hello world 2')
+//
+//return
+}
+
+/**
+ * Turn off ajax indicator on iPad FiD so scrollbars do not show up
+ * 
+ * @properties={typeid:24,uuid:"C04AB740-78A8-4C00-B6BB-31B2AB0586C8"}
+ */
+function CODE_form_in_dialog_setup_ipad() {
+	if (application.__parent__.solutionPrefs && solutionPrefs.config.webClient && scopes.DS.deviceFactor == 'iPad') {
+		plugins.WebClientUtils.executeClientSideJS('indicatorOff();')
+	}
+}
+
+/**
+ * Spellcheck the element assigned to the event's labelfor property.
+ * 
+ * @param {JSEevent} event
+ * 
+ * @properties={typeid:24,uuid:"D946F5F2-235C-4171-BE1B-1DA8F13470C6"}
+ */
+function CODE_spellcheck(event) {
+	if (event) {
+		var formName = event.getFormName()
+		var btnName = event.getElementName()
+		var elemName = forms[formName].elements[btnName].getLabelForElementName()
+		
+		if (formName && elemName && forms[formName].elements[elemName]) {
+			plugins.spellcheck.checkTextComponent(forms[formName].elements[elemName])
+		}
+	}
+}
+
+/**
+ * Get the mouse location within a workflow form.
+ * 
+ * @param {JSEvent} event
+ * @param {Number[]} posn
+ * @return {{x: Number, y: Number}} Coordinates
+ * 
+ * @properties={typeid:24,uuid:"9E4A25E9-1D33-40AD-B7A6-55FE133630F7"}
+ */
+function TRIGGER_mouse_get(event,posn) {
+	var position = {
+			x: 0,
+			y: 0
+		}
+	
+	if (solutionPrefs.config.webClient) {
+		//header offset
+		position.y += 44
+		
+		//are we in workflow space (no offset)
+		if (solutionPrefs.config.activeSpace != 'workflow') {
+			//all horizontals kept in sync; doesn't matter which one i grab
+			position.x += solutionPrefs.screenAttrib.spaces.standard.currentHorizontal
+		}
+		
+		//at this point, position is in the top left corner of the workflow form
+		
+		var context = forms[event.getFormName()].controller.getFormContext()
+		
+		//working on workflow form
+		if (context.getValue(3,2) == 'DATASUTRA_WEB_0F__workflow') {
+			for (var i = 4; i <= context.getMaxRowIndex(); i++) {
+				var formContext = context.getRowAsArray(i)
+				var formName = formContext[1]
+				var elemName = formContext[2]
+				
+				//see about a title header
+				var smForm = solutionModel.getForm(formName)
+				if (smForm.getTitleHeaderPart() && smForm.getTitleHeaderPart().height) {
+					position.y += smForm.getTitleHeaderPart().height
+				}
+				
+				//check what element
+				if (formName && elemName) {
+					position.x += forms[formName].elements[elemName].getLocationX()
+					position.y += forms[formName].elements[elemName].getLocationY()
+				}
+			}
+		}
+		//working on sidebar
+		
+		//something else
+		
+		
+	}
+	//mouse pointer plugin available
+	else if (false) {
+		
+	}
+	
+//	//grab last click location from Wicket
+//	if (solutionPrefs.config.webClient) {
+//		//current mouse location
+//		if (!posn) {
+//			plugins.WebClientUtils.executeClientSideJS('var posn = Wicket.indicatorPosition;', TRIGGER_mouse_get, [null,'posn'])
+//		}
+//		//have cursor, resume paused method
+//		else {
+//			
+//		}
+//	}
+	
+	return position
 }
