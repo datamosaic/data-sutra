@@ -1,9 +1,11 @@
 # Data Sutra
 
-Note that this is an ARCHIVED repo. Active development used SVN for version control and the last release (circa 2013?) targeted Servoy 6.1.6.
+This is a converted SVN repo representing last production release circa 2013 for Servoy 6.1.6.
 
-## Links
+Check out the Servoy-8-dev branch for Servoy 8 conversion effort (2017).
 
-- [Website](#)
+### Links
+
+- [Website (original)](#)
 - [Documentation](#)
-- [Download last release](#)
+- [Download Servoy 6.1.6 release](#)
