@@ -1,7 +1,7 @@
 {
   "gitbook": ">=3.2.1",
   "title": "Data sutra",
-  "root": "./documentation"
+  "root": "./documentation",
   "plugins": ["edit-link", "github"],
   "pluginsConfig": {
     "theme-default": {
