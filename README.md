@@ -9,5 +9,3 @@ Check out the Servoy-8-dev branch for Servoy 8 conversion effort (2017).
 - [Website (original)](#)
 - [Documentation](#)
 - [Download Servoy 6.1.6 release](#)
-
-...
