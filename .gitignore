@@ -28,5 +28,9 @@ node_modules
 .lock-wscript
 
 # node_modules
+website/doc_src/documentation
+website/doc_src/servoy-06/_book
 website/doc_src/servoy-06/node_modules
-website/doc_src/servoy-06/node_modules
+website/doc_src/servoy-08/_book
+website/doc_src/servoy-08/node_modules
+
