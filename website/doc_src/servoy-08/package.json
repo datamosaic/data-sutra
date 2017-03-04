@@ -18,7 +18,7 @@
     "gitbook-plugin-simple-page-toc": "^0.1.1",
     "gitbook-plugin-theme-vuejs": "git+https://github.com/pearofducks/gitbook-plugin-theme-vuejs.git",
     "gitbook-plugin-todo": "^0.1.3",
-    "gitbook-plugin-versions": "^2.1.4",
+    "gitbook-plugin-versions": "git+https://github.com/kabootit/gitbook-plugin-versions.git",
     "gitbook-plugin-youtube": "^1.1.0"
   }
 }
