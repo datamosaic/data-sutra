@@ -1,3 +1,3 @@
 # Website
 
-Source for website. Build step puts files in repo `docs` directory, the directory specified for GitHub Pages.
+Source for website. Deploy step puts files in the `docs` directory — the directory specified for GitHub Pages.
