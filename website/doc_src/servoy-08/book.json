@@ -17,11 +17,11 @@
             "gitbookConfigURL": "./book.json",
             "options": [
                 {
-                    "value": "documentation/servoy-06",
+                    "value": "./documentation/servoy-06",
                     "text": "Servoy 6"
                 },
                 {
-                    "value": "documentation/servoy-08",
+                    "value": "./documentation/servoy-08",
                     "text": "Servoy 8",
                     "selected": true
                 }
