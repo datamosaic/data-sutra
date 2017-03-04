@@ -10,7 +10,7 @@
     - [Installation](quick-start/installation.md)
     - [Your First App](quick-start/your-first-app.md)
     - [Features Orientation](quick-start/features-orientation.md)
-    - [Layout Overview](developer-guide/layout-overview.md)
+    - [Layout Overview](quick-start/layout-overview.md)
 - Developer Guide
     - [Philosophy](developer-guide/philosophy.md)
     - [Modules](developer-guide/modules.md)
