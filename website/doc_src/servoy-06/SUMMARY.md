@@ -10,11 +10,11 @@
     - [Installation](quick-start/installation.md)
     - [Your First App](quick-start/your-first-app.md)
     - [Features Orientation](quick-start/features-orientation.md)
-- Developer Guide
     - [Layout Overview](developer-guide/layout-overview.md)
+- Developer Guide
     - [Philosophy](developer-guide/philosophy.md)
-    - [API](developer-guide/api.md)
     - [Modules](developer-guide/modules.md)
+    - [API](developer-guide/api.md)
     - [Reporting](developer-guide/reporting.md)
     - [Naming Conventions](developer-guide/naming-conventions.md)
     - [Bootstrap Hooks](developer-guide/bootstrap-hooks.md)
