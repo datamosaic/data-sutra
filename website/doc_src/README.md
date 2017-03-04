@@ -27,11 +27,20 @@ From this directory (not inside a specific documentation directory), `npm run bu
 
 > Note: [http-server](https://www.npmjs.com/package/http-server) needs to be installed globally for this step.
 
+
 ## Deploy
 
+`npm run deploy` will copy `./website/doc_src/documentation` to `./docs/documentation`, git commit and push.
 
-## Install new version
 
+## Install new documentation version
 
+1. Create a new directory in doc_src
+2. Copy over files: `book.json`, `package.json`, `README.md`, and `SUMMARY.md` from another docs directory.
+3. `cd` into new directory.
+4. `npm install`
+5. In each doc directory, in the `book.json` file add new docs entry to the `pluginsConfig.version.options` array.
+6. In the new `book.json`, adjust the `"selected": true` of the `pluginsConfig.version.options` to new entry.
+7. In the `doc_src/package.json` file, add the new directory to the build scripts
 
 
