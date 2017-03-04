@@ -11,7 +11,7 @@
     "build:6": "gitbook build ./servoy-06 ./documentation/servoy-06",
     "build:8": "gitbook build ./servoy-08 ./documentation/servoy-08",
     "serve": "http-server ./documentation",
-    "deploy": ".bin/deploy.sh"
+    "deploy": "npm run build && .bin/deploy.sh"
   },
   "keywords": [],
   "author": "",
