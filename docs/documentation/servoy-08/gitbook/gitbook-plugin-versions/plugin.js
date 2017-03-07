@@ -37,7 +37,7 @@ require(['gitbook', 'jQuery'], function (gitbook, $) {
             var version = filtered[0];
 
             var filePath = location.href.replace(gitbook.state.bookRoot, '');
-            window.location.href = version.includeFilepath? (version.value + filePath) : version.value;
+            window.location.href = version.includeFilepath? (version.value + filePath) : window.location.origin + '/' + version.value;
         });
 
         $li.prependTo('.book-summary ul.summary');
