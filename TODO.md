@@ -1,14 +1,7 @@
 # TODOs
 
-- [x] old website
-- [x] favicon.ico working
-- [x] debug `Versions` plugin links issue
+- [ ] update main readme
 
-## v6 Archive
-
-- [x] Convert SVN to Git and move to Github
-- [x] Convert documentation from Redmine to something static
-- [x] Convert website to something static
 
 ## v8 Migration
 
