@@ -1,5 +1,3 @@
-<%@ page import = "java.util.*" %>
-<% HashMap pageData = (HashMap)request.getAttribute("pageData");%>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,13 +6,13 @@
 	<link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Montserrat">
 	<link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Muli">
 	<link href="http://fonts.googleapis.com/css?family=Arizonia" rel="stylesheet" type="text/css">
-	<link rel="shortcut icon" href="<%=(String)request.getAttribute("themeDirectory")%>/favicon.ico" />
-	<link rel="stylesheet" href="<%=(String)request.getAttribute("themeDirectory")%>/library/css/bootstrap.css"/>
-	<link rel="stylesheet" href="<%=(String)request.getAttribute("themeDirectory")%>/library/css/bootstrap-responsive.css"/>
-	<link rel="stylesheet" href="<%=(String)request.getAttribute("themeDirectory")%>/library/css/custom.css" />
-	<link rel="stylesheet" href="<%=(String)request.getAttribute("themeDirectory")%>/library/css/lightbox/jquery.lightbox.css" />
+	<link rel="shortcut icon" href="favicon.ico" />
+	<link rel="stylesheet" href="library/css/bootstrap.css"/>
+	<link rel="stylesheet" href="library/css/bootstrap-responsive.css"/>
+	<link rel="stylesheet" href="library/css/custom.css" />
+	<link rel="stylesheet" href="library/css/lightbox/jquery.lightbox.css" />
 	<!--[if IE 6]>
-	<link rel="stylesheet" href="<%=(String)request.getAttribute("themeDirectory")%>/library/css/lightbox/jquery.lightbox.ie6.css" />
+	<link rel="stylesheet" href="library/css/lightbox/jquery.lightbox.ie6.css" />
 	<![endif]-->
 	<!--[if (IE 7)|(IE 8)]>
 <style type="text/css">
@@ -23,8 +21,6 @@
 }
 </style>
 <![endif]-->
-<jsp:include page='<%= (String)request.getAttribute("head") %>' /> 
-
 </head>
 
 <body>	
@@ -32,7 +28,7 @@
 		<div class="navbar-inner">
 			<div class="container" >
 				<a class="brand transition" href="/">
-					<img  src="<%=(String)request.getAttribute("themeDirectory")%>/library/images/logo-120x25.png"/>
+					<img  src="library/images/logo-120x25.png"/>
 				</a>
 				<button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
 				            <span class="icon-bar"></span>
@@ -43,14 +39,16 @@
 				<ul class="nav">
 					<li class="small-hide"><a href='#tour'>Tour</a></li>
 					<li><a href='#about'>About</a></li>
-					
-					<!-- <li><a href='#licensing'>Licensing</a></li> -->
-					<!-- <li><a href='#faq'>FAQ</a></li> -->
 					<li><a href='#testimonials'>Testimonials</a></li>
-					<li><a href='#contact'>Contact</a></li>
+					<li><a href='http://data-sutra.com/documentation/servoy-06/'>Documentation</a></li>
 				</ul>
-				<ul class="nav pull-right">	
-					<li class="dropdown">
+				<ul class="nav pull-right">
+					<li>
+						<a href="https://github.com/datamosaic/data-sutra">
+							<img style="height: 20px;"" src="library/img/GitHub-Mark-Light-32px.png"/>
+						</a>
+					</li>
+					<!--<li class="dropdown">
 					    <a class="dropdown-toggle"
 					       data-toggle="dropdown"
 					       href="#">
@@ -64,7 +62,7 @@
 						  <li class="divider"></li>
 						  <li><a href="http://community.data-sutra.com/projects/datasutra/issues/new">File an issue...</a></li>
 					    </ul>
-					  </li>
+					  </li>-->
 					<!-- <li class="dropdown">
 					    <a class="dropdown-toggle"
 					       data-toggle="dropdown"
@@ -132,9 +130,9 @@
 				<p>Don't start with a blank slate. Start with the most advanced Servoy-based application platform on the planet.</p>
 				
 	    		<p id="demo-server">
-					<a href="http://community.data-sutra.com/projects/datasutra/wiki/Philosophy"><span class="text-info">Philosophy</span></a>&nbsp;&nbsp;&nbsp;&nbsp;
-	    			<a href="http://demo.data-sutra.com/" target="_blank" class="btn btn-success btn-large">Live Demo</a>
-					<a href="http://community.data-sutra.com/projects/datasutra/files" target="_blank" class="btn btn-standard btn-large">Download</a>
+					<a href="http://data-sutra.com/documentation/servoy-06/developer-guide/philosophy.html"><span class="text-info">Philosophy</span></a>&nbsp;&nbsp;&nbsp;&nbsp;
+	    			<a href="https://github.com/datamosaic/data-sutra" target="_blank" class="btn btn-success btn-large">Github</a>
+					<!--<a href="http://community.data-sutra.com/projects/datasutra/files" target="_blank" class="btn btn-standard btn-large">Download</a>-->
 					<!-- <a href="http://europe.data-sutra.com/" target="_blank" class="btn btn-success btn-large">Europe Server</a> -->
 	    			<!-- &nbsp;&nbsp;&nbsp;&nbsp;<a href="#" class="text-info"><span class="mini-link">Build an App in 5 Minutes &raquo;<span></a>	 -->
 	    		</p>
@@ -142,26 +140,26 @@
 
 			<!-- screenshots -->
     		<div class="span5">
-    			<a href="<%=(String)request.getAttribute("themeDirectory")%>/library/tour/screen-normal.png" class="lightbox lightbox-active" rel="lightbox[screenshots]" title="1. A basic record view">
-					<img src="<%=(String)request.getAttribute("themeDirectory")%>/library/tour/screen-normal.png"/>
+    			<a href="library/tour/screen-normal.png" class="lightbox lightbox-active" rel="lightbox[screenshots]" title="1. A basic record view">
+					<img src="library/tour/screen-normal.png"/>
 				</a>
-				<a href="<%=(String)request.getAttribute("themeDirectory")%>/library/tour/screen-print-preview.png" class="lightbox" rel="lightbox[screenshots]" title="2. Inline print preview">
-					<img src="<%=(String)request.getAttribute("themeDirectory")%>/library/tour/screen-print-preview.png"/>
+				<a href="library/tour/screen-print-preview.png" class="lightbox" rel="lightbox[screenshots]" title="2. Inline print preview">
+					<img src="library/tour/screen-print-preview.png"/>
 				</a>
-				<a href="<%=(String)request.getAttribute("themeDirectory")%>/library/tour/screen-date-combo.png" class="lightbox" rel="lightbox[screenshots]" title="3. Custom comboboxes and date picker">
-					<img src="<%=(String)request.getAttribute("themeDirectory")%>/library/tour/screen-date-combo.png"/>
+				<a href="library/tour/screen-date-combo.png" class="lightbox" rel="lightbox[screenshots]" title="3. Custom comboboxes and date picker">
+					<img src="library/tour/screen-date-combo.png"/>
 				</a>
-				<a href="<%=(String)request.getAttribute("themeDirectory")%>/library/tour/screen-sidebar.png" class="lightbox" rel="lightbox[screenshots]" title="4. Sidebar showing &quot;Sutra Notes&quot; module">
-					<img src="<%=(String)request.getAttribute("themeDirectory")%>/library/tour/screen-sidebar.png"/>
+				<a href="library/tour/screen-sidebar.png" class="lightbox" rel="lightbox[screenshots]" title="4. Sidebar showing &quot;Sutra Notes&quot; module">
+					<img src="library/tour/screen-sidebar.png"/>
 				</a>
-				<a href="<%=(String)request.getAttribute("themeDirectory")%>/library/tour/screen-edit.png" class="lightbox" rel="lightbox[screenshots]" title="5. Edit/Save transaction mode">
-					<img src="<%=(String)request.getAttribute("themeDirectory")%>/library/tour/screen-edit.png"/>
+				<a href="library/tour/screen-edit.png" class="lightbox" rel="lightbox[screenshots]" title="5. Edit/Save transaction mode">
+					<img src="library/tour/screen-edit.png"/>
 				</a>
-				<a href="<%=(String)request.getAttribute("themeDirectory")%>/library/tour/screen-ipad-icon.png" class="lightbox" rel="lightbox[screenshots]" title="6. iPad application icon. Customizable!">
-					<img src="<%=(String)request.getAttribute("themeDirectory")%>/library/tour/screen-ipad-icon.png"/>
+				<a href="library/tour/screen-ipad-icon.png" class="lightbox" rel="lightbox[screenshots]" title="6. iPad application icon. Customizable!">
+					<img src="library/tour/screen-ipad-icon.png"/>
 				</a>
-				<a href="<%=(String)request.getAttribute("themeDirectory")%>/library/tour/screen-ipad-at-work.png" class="lightbox" rel="lightbox[screenshots]" title="7. iPad at work. Bonus points if you can guess what trumpet I play and what coffee I drink.">
-					<img src="<%=(String)request.getAttribute("themeDirectory")%>/library/tour/screen-ipad-at-work.png"/>
+				<a href="library/tour/screen-ipad-at-work.png" class="lightbox" rel="lightbox[screenshots]" title="7. iPad at work. Bonus points if you can guess what trumpet I play and what coffee I drink.">
+					<img src="library/tour/screen-ipad-at-work.png"/>
 				</a>
 				<p class="screenshots-title"><em>Screen shots</em></p>
     		</div>
@@ -232,15 +230,6 @@
 	<div class="screenshot" id="tour-servoy-ide">
 		<button data-x="60" data-y="50" class="btn btn-danger btn-small" rel="popover" data-title="Workspaces" data-content="The workspace button switches between the various workspaces a user has access to.">1</button>
 	</div>
-	
-	<div class="row">
-		<div class="span10">
-			<a href="http://demo.data-sutra.com/" target="_blank" class="btn btn-block btn-default" style="width:100%;">Try it live on U.S. demo server</a>
-			
-			<!-- <button class="btn btn-block btn-default" style="width:100%;">Try it live on U.S. demo server</button> -->
-		</div>
-	</div>
-	
 </div>
 
 <!--
@@ -254,7 +243,7 @@
 				<!-- item 
 				<div class="item active">
 					<div class="testimonial row">
-						<div class="span2 icons"><a class="thumbnail span1"><img src="<%=(String)request.getAttribute("themeDirectory")%>/library/img/vector/newspaper.png"/></a></div>
+						<div class="span2 icons"><a class="thumbnail span1"><img src="library/img/vector/newspaper.png"/></a></div>
 						<div class="span7 news-description">
 							<h3>Data Sutra 4.0.2 released</h3>
 							<p class="text-warning">March 21, 2013</p>
@@ -274,7 +263,7 @@
 				<!-- item 
 				<div class="item">
 					<div class="testimonial row">
-						<div class="span2 icons"><a class="thumbnail span1"><img src="<%=(String)request.getAttribute("themeDirectory")%>/library/img/vector/newspaper.png"/></a></div>
+						<div class="span2 icons"><a class="thumbnail span1"><img src="library/img/vector/newspaper.png"/></a></div>
 						<div class="span7 news-description">
 							<h3>Data Sutra 4.0.1 released</h3>
 							<p class="text-warning">February 18, 2013</p>
@@ -293,7 +282,7 @@
 				<!-- item 
 				<div class="item">
 					<div class="testimonial row">
-						<div class="span2 icons"><a class="thumbnail span1"><img src="<%=(String)request.getAttribute("themeDirectory")%>/library/img/vector/newspaper.png"/></a></div>
+						<div class="span2 icons"><a class="thumbnail span1"><img src="library/img/vector/newspaper.png"/></a></div>
 						<div class="span7 news-description">
 							<h3>Web Starter Package released</h3>
 							<p class="text-warning">February 6, 2013</p>
@@ -310,7 +299,7 @@
 				<!-- item 
 				<div class="item">
 					<div class="testimonial row">
-						<div class="span2 icons"><a class="thumbnail span1"><img src="<%=(String)request.getAttribute("themeDirectory")%>/library/img/vector/newspaper.png"/></a></div>
+						<div class="span2 icons"><a class="thumbnail span1"><img src="library/img/vector/newspaper.png"/></a></div>
 						<div class="span7 news-description">
 							<h3>Data Sutra 4.0 released!</h3>
 							<p class="text-warning">January 16, 2013</p>
@@ -332,7 +321,7 @@
 				<!-- item 
 				<div class="item">
 					<div class="testimonial row">
-						<div class="span2 icons"><a class="thumbnail span1"><img src="<%=(String)request.getAttribute("themeDirectory")%>/library/img/vector/newspaper.png"/></a></div>
+						<div class="span2 icons"><a class="thumbnail span1"><img src="library/img/vector/newspaper.png"/></a></div>
 						<div class="span7 news-description">
 							<h3>UI update in final testing</h3>
 							<p class="text-warning">January 9, 2013</p>
@@ -355,12 +344,12 @@
 				<!-- item 
 				<div class="item">
 					<div class="testimonial row">
-						<div class="span2 icons"><a class="thumbnail span1"><img src="<%=(String)request.getAttribute("themeDirectory")%>/library/img/vector/newspaper.png"/></a></div>
+						<div class="span2 icons"><a class="thumbnail span1"><img src="library/img/vector/newspaper.png"/></a></div>
 						<div class="span7 news-description">
 							<h3>Hacking Servoy's Calendar Picker</h3>
 							<p class="text-warning">January 3, 2013</p>
 							<p>Servoy's web client calendar picker is an easy target to make fun of&mdash;the last time it looked even somewhat passable was probably 15 years ago. So we redid it:</p>
-							<img class="img-polaroid" src="<%=(String)request.getAttribute("themeDirectory")%>/library/img/news/cal-picker-new.png"/>
+							<img class="img-polaroid" src="library/img/news/cal-picker-new.png"/>
 							<p>Read the rest of the article over at <a href="http://www.servoymagazine.com/home/2013/01/hacking-servoys-calendar-picker.html">Servoy Magazine</a></p>
 							
 						</div>
@@ -387,7 +376,7 @@
 		</div>
 		
 		<div class="row feature">
-		<div class="span3 icons"><img src="<%=(String)request.getAttribute("themeDirectory")%>/library/img/about/check-box.png"/></div>
+		<div class="span3 icons"><img src="library/img/about/check-box.png"/></div>
 			<div class="span7 feature-description">
 				<h2>Everything you need to build a great app</h2>
 				<p>Why are there so many garbage apps in the world?</p>
@@ -398,7 +387,7 @@
 		</div>
 		
 		<div class="row feature">
-		<div class="span3 icons"><img src="<%=(String)request.getAttribute("themeDirectory")%>/library/img/about/favorite-add.png"/></div>
+		<div class="span3 icons"><img src="library/img/about/favorite-add.png"/></div>
 			<div class="span7 feature-description">
 				<h2>A great UX easily adopted by your users</h2>
 				<p>Data Sutra has a familiar and intuitive "consumer" application layout and functionality. Adaptive workspaces, screen and record navigation, configurable lists, contextual menus, centralized searching, filter engine, inline help system, main workflow area, sidebar workflow area, accessible reports &mdash; all consistently organized and styled with our "grid" theme.</p>
@@ -408,7 +397,7 @@
 		</div>
 		
 		<div class="row feature">
-		<div class="span3 icons"><img src="<%=(String)request.getAttribute("themeDirectory")%>/library/img/about/toolbox.png"/></div>
+		<div class="span3 icons"><img src="library/img/about/toolbox.png"/></div>
 			<div class="span7 feature-description">
 				<h2>Extreme power out-of-the-box</h2>
 				<p>Data Sutra comes includes tons of stuff you don't have to code: layout manager, navigation manager, record navigator, solution preferences, user created lists, fast find, find and replace, action menus, filter builder, automatic transactions, report manager, toolbars, sidebars, user preferences, value list manager, tooltip manager, inline user feedback, i18n manager, code library, API, Grid theme, form templates, sample solutions, meta data reports, large solution organization guidelines and pluggable architecture, smart and web client, advanced UX, etc.</p>
@@ -417,7 +406,7 @@
 		</div>
 		
 		<div class="row feature">
-		<div class="span3 icons"><img src="<%=(String)request.getAttribute("themeDirectory")%>/library/img/about/power.png"/></div>
+		<div class="span3 icons"><img src="library/img/about/power.png"/></div>
 			<div class="span7 feature-description">
 				<h2>Exclusive web client customizations</h2>
 				<p>Data Sutra implements many of the latest html5 techniques that go beyond what Servoy offers. Customizations include: browser and platform detection, a rockin' date picker, wrappers for various browsers and platforms, elegant spinner notification for blocking actions, registration and login widgets to include on external websites, "pretty" URLs, unique URLs for each screen and record, browser history buttons enabled, google analytics, scrollbar styling, URL rewrites for SaaS deployments, session tracking, report preview and printing, etc.</p>
@@ -426,7 +415,7 @@
 		</div>
 		
 		<div class="row feature">
-		<div class="span3 icons"><img src="<%=(String)request.getAttribute("themeDirectory")%>/library/img/about/plugin.png"/></div>
+		<div class="span3 icons"><img src="library/img/about/plugin.png"/></div>
 			<div class="span7 feature-description">
 				<h2>Pluggable pre-built applications</h2>
 				<p>There is a growing collection of 3rd party modules for various business tasks (CRM, CMS, mailers, documents, charting, etc) that you can plug into your solution.</p>
@@ -435,7 +424,7 @@
 		</div>
 		
 		<div class="row feature">
-		<div class="span3 icons"><img src="<%=(String)request.getAttribute("themeDirectory")%>/library/img/about/security.png"/></div>
+		<div class="span3 icons"><img src="library/img/about/security.png"/></div>
 			<div class="span7 feature-description">
 				<h2>Security in a mobile world</h2>
 				<p>Our security module implements a robust 3-tier restriction plan: views, records and functionality. With our management screens, you can quickly assign what a user can see, what records they have access to, and what they can do while there.</p>
@@ -446,7 +435,7 @@
 		</div>
 		
 		<div class="row feature">
-		<div class="span3 icons"><img src="<%=(String)request.getAttribute("themeDirectory")%>/library/img/about/tool.png"/></div>
+		<div class="span3 icons"><img src="library/img/about/tool.png"/></div>
 			<div class="span7 feature-description">
 				<h2>Servoy</h2>
 				<p>A full featured IDE with a visual form editor and server-side java script. Debugger, team sharing, code hints and warnings, large collection of native plugins, access to all eclipse plugins, JDBC connect to all databases, etc. Servoy's <a href="http://www.servoy.com">website</a>.</p>
@@ -455,7 +444,7 @@
 		</div>
 		
 		<div class="row feature">
-		<div class="span3 icons"><img src="<%=(String)request.getAttribute("themeDirectory")%>/library/img/about/cloud.png"/></div>
+		<div class="span3 icons"><img src="library/img/about/cloud.png"/></div>
 			<div class="span7 feature-description">
 				<h2>Flexible deployment</h2>
 				<p>Deploy to many users and many organizations (SaaS) from the cloud or on premise. Use any SQL database (MySQL, PostgreSQL, Oracle, etc). Run from any Java server (Tomcat, JBoss, Jetty, WebSphere, etc).</p>
@@ -464,7 +453,7 @@
 		</div>
 		
 		<div class="row feature">
-		<div class="span3 icons"><img src="<%=(String)request.getAttribute("themeDirectory")%>/library/img/about/magic-wand.png"/></div>
+		<div class="span3 icons"><img src="library/img/about/magic-wand.png"/></div>
 			<div class="span7 feature-description">
 				<h2>Low barrier of entry</h2>
 				<p>New to Servoy? Need to get knock something out fast? Don't know where to start with a large project?</p>
@@ -502,18 +491,18 @@
 				</tr>			
 				<tr>
 					<td>Unlimited development</td>
-					<td><h4><img src="<%=(String)request.getAttribute("themeDirectory")%>/library/img/green-check.png"/></h4></td>
-					<td><h4><img src="<%=(String)request.getAttribute("themeDirectory")%>/library/img/red-check.png"/></h4></td>
+					<td><h4><img src="library/img/green-check.png"/></h4></td>
+					<td><h4><img src="library/img/red-check.png"/></h4></td>
 				</tr>				
 				<tr>
 					<td>Unlimited open source deployment</td>
-					<td><h4><img src="<%=(String)request.getAttribute("themeDirectory")%>/library/img/green-check.png"/></h4></td>
-					<td><h4><img src="<%=(String)request.getAttribute("themeDirectory")%>/library/img/red-check.png"/></h4></td>
+					<td><h4><img src="library/img/green-check.png"/></h4></td>
+					<td><h4><img src="library/img/red-check.png"/></h4></td>
 				</tr>
 				<tr>
 					<td>Unlimited commercial deployment</td>
 					<td>&nbsp;</td>
-					<td><h4><img src="<%=(String)request.getAttribute("themeDirectory")%>/library/img/red-check.png"/></h4></td>
+					<td><h4><img src="library/img/red-check.png"/></h4></td>
 				</tr>
 				<tr>
 					<td>Hosted testing server (5 users)</td>
@@ -538,13 +527,13 @@
 				</tr>		
 				<tr>
 					<td>Forum support</td>
-					<td><h4><img src="<%=(String)request.getAttribute("themeDirectory")%>/library/img/green-check.png"/></h4></td>
-					<td><h4><img src="<%=(String)request.getAttribute("themeDirectory")%>/library/img/red-check.png"/></h4></td>
+					<td><h4><img src="library/img/green-check.png"/></h4></td>
+					<td><h4><img src="library/img/red-check.png"/></h4></td>
 				</tr>
 				<tr>
 					<td>Premium forum support</td>
 					<td>&nbsp;</td>
-					<td><h4><img src="<%=(String)request.getAttribute("themeDirectory")%>/library/img/red-check.png"/></h4></td>
+					<td><h4><img src="library/img/red-check.png"/></h4></td>
 				</tr>
 				<tr>
 					<td>Code obfuscation (IP protection)</td>
@@ -788,8 +777,8 @@
 					<p>Hi, I'm David and that is Troy there scrunched over a computer in a coffee shop on Planet X somewhere. We're the founders of <a href="http://www.data-mosaic.com">Data Mosaic</a> and your esteemed developers of <a href="http://www.data-sutra.com">Data Sutra</a>.</p>
 					<p>We've been developing with Servoy since before it was publicaly released 10+ years ago. You may know us from the 100's of <a href="http://forum.servoy.com">Servoy forum</a> posts over the years, the creators and publishers of <a href="http://www.servoymagazine.com">Servoy Magazine</a>, our <a href="http://www.youtube.com/datamosaic">YouTube channel</a>, regular speakers at Servoy conferences, or out <a href="http://www.more-mtb.org/">hammering single track</a>.</p>
 					<div class="span1">&nbsp;</div>
-					<div class="span4 pagination-centered"><img class="img-rounded" title="David"  src="<%=(String)request.getAttribute("themeDirectory")%>/library/images/david.png"/></div>
-					<div class="span4 pagination-centered"><img class="img-rounded" title="Troy"  src="<%=(String)request.getAttribute("themeDirectory")%>/library/images/troy2.jpg"/></div>
+					<div class="span4 pagination-centered"><img class="img-rounded" title="David"  src="library/images/david.png"/></div>
+					<div class="span4 pagination-centered"><img class="img-rounded" title="Troy"  src="library/images/troy2.jpg"/></div>
 			       </div>
 			     </div>
 			   </div>
@@ -802,7 +791,7 @@
 			     </div>
 			     <div id="ds-confused" class="accordion-body collapse">
 			       <div class="accordion-inner">
-					<div class="span4 pagination-centered"><img class="img-rounded" title="Spit happens"  src="<%=(String)request.getAttribute("themeDirectory")%>/library/images/spit-happens.jpg"/></div>
+					<div class="span4 pagination-centered"><img class="img-rounded" title="Spit happens"  src="library/images/spit-happens.jpg"/></div>
 			       </div>
 			     </div>
 			   </div>
@@ -826,7 +815,7 @@
 				
 				<div class="item active">
 					<div class="testimonial row">
-						<div class="span2 icons"><a class="thumbnail span1"><img src="<%=(String)request.getAttribute("themeDirectory")%>/library/img/about/announcement-flip.png"/></a></div>
+						<div class="span2 icons"><a class="thumbnail span1"><img src="library/img/about/announcement-flip.png"/></a></div>
 						<div class="span7 testimonial-description">
 							<em>&ldquo;Data Mosaic helped me work out coding strategies that depend on heavy-duty mathematical calculations applied to thousands of records. Instead of 23 seconds, they now take 1.7 seconds &mdash; invaluable! These guys are far beyond brilliant and are the best help money can buy.&rdquo;</em>
 							<p>
@@ -839,7 +828,7 @@
 				
 				<div class="item">
 					<div class="testimonial row">
-						<div class="span2 icons"><a class="thumbnail span1"><img src="<%=(String)request.getAttribute("themeDirectory")%>/library/img/about/announcement-flip.png"/></a></div>
+						<div class="span2 icons"><a class="thumbnail span1"><img src="library/img/about/announcement-flip.png"/></a></div>
 						<div class="span7 testimonial-description">
 							<em>&ldquo;Ok guys, really&mdash;where did you steal this application framework from? The level of polish on this is insane. Excellent!&rdquo;</em>
 							<p>
@@ -853,7 +842,7 @@
 				
 				<div class="item">
 					<div class="testimonial row">
-						<div class="span2 icons"><a class="thumbnail span1"><img src="<%=(String)request.getAttribute("themeDirectory")%>/library/img/about/announcement-flip.png"/></a></div>
+						<div class="span2 icons"><a class="thumbnail span1"><img src="library/img/about/announcement-flip.png"/></a></div>
 						<div class="span7 testimonial-description">
 							<em>&ldquo;Data Sutra is a supercharger for Servoy RAD! A monumental leap forward in RAD methodologies enabling direct connection with our customers. The ROI is at least 100-fold in time saved.&rdquo;</em>
 							<p>
@@ -867,7 +856,7 @@
 				
 				<div class="item">
 					<div class="testimonial row">
-						<div class="span2 icons"><a class="thumbnail span1"><img src="<%=(String)request.getAttribute("themeDirectory")%>/library/img/about/announcement-flip.png"/></a></div>
+						<div class="span2 icons"><a class="thumbnail span1"><img src="library/img/about/announcement-flip.png"/></a></div>
 						<div class="span7 testimonial-description">
 							<em>&ldquo;The guys at Data Mosaic are impressive. On a very complicated project they are always two steps ahead of us and everything is extremely well thought out &mdash; their experience shows! With Data Sutra as the starting point, not only are we saving weeks of development time, I was also able to contribute with apps of my own in a matter of days even as a php programmer.&rdquo;</em>
 							<p>
@@ -880,7 +869,7 @@
 				
 				<div class="item">
 					<div class="testimonial row">
-						<div class="span2 icons"><a class="thumbnail span1"><img src="<%=(String)request.getAttribute("themeDirectory")%>/library/img/about/announcement-flip.png"/></a></div>
+						<div class="span2 icons"><a class="thumbnail span1"><img src="library/img/about/announcement-flip.png"/></a></div>
 						<div class="span7 testimonial-description">
 							<em>&ldquo;It looks good, I like! And all the extra java script stuff...you guys are CRAZY! ;-)<br /><br />
 
@@ -901,7 +890,7 @@
 		
 	</div> 
 
-	<div class="section" id="contact">
+	<!--<div class="section" id="contact">
 		<div class="page-header"><h2>Contact</h2></div>
 		<div class=" row">
 				<div class="span6">
@@ -934,40 +923,37 @@
 					</form>
 				</div>
 				
-				<div id="contact-info" class="span6"><img src="<%=(String)request.getAttribute("themeDirectory")%>/library/img/vector/phone.png"/>
+				<div id="contact-info" class="span6"><img src="library/img/vector/phone.png"/>
 					<h1 style="font-size:2em;"><br/>+1 202 573 9669</h1><p>Call anytime</p>
 				</div>
 				
 					
-			</div>
+			</div>-->
 
 
-			<footer class="footer" style="float: left;">
-	
-			<a href="https://twitter.com/datamosaic" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-align="left">Follow @datasutra</a>
-<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
-		<p>Data Sutra is an open source project of Data Mosaic. &copy; Copyright 2013 <a href="http://www.data-mosaic.com/">Data Mosaic, LLC</a>.</p>
+	<footer class="footer" style="float: left;">
+		<p>Data Sutra is an open source project of Data Mosaic. &copy; Copyright 2005—2017 <a href="http://www.data-mosaic.com/">Data Mosaic, LLC</a>.</p>
 	</footer>
-
 </div> <!-- container -->
-	</div>
-	<script src="<%=(String)request.getAttribute("themeDirectory")%>/library/js/jquery.min.js"></script>
-	<script src="<%=(String)request.getAttribute("themeDirectory")%>/library/js/modernizr.js"></script>
-	<script src="<%=(String)request.getAttribute("themeDirectory")%>/library/js/bootstrap.js"></script>
- 	<script src="<%=(String)request.getAttribute("themeDirectory")%>/library/js/bootstrap-transition.js"></script>
-    <!-- <script src="<%=(String)request.getAttribute("themeDirectory")%>/library/js/bootstrap-alert.js"></script> -->
-    <!-- <script src="<%=(String)request.getAttribute("themeDirectory")%>/library/js/bootstrap-modal.js"></script> -->
-    <!-- <script src="<%=(String)request.getAttribute("themeDirectory")%>/library/js/bootstrap-dropdown.js"></script> -->
-    <script src="<%=(String)request.getAttribute("themeDirectory")%>/library/js/bootstrap-tooltip.js"></script>
-    <script src="<%=(String)request.getAttribute("themeDirectory")%>/library/js/bootstrap-popover.js"></script>
-    <script src="<%=(String)request.getAttribute("themeDirectory")%>/library/js/bootstrap-button.js"></script>
-    <script src="<%=(String)request.getAttribute("themeDirectory")%>/library/js/bootstrap-collapse.js"></script>
-    <!-- <script src="<%=(String)request.getAttribute("themeDirectory")%>/library/js/bootstrap-carousel.js"></script> -->
-	<script src="<%=(String)request.getAttribute("themeDirectory")%>/library/js/bootstrap-tab.js"></script>
-    <script src="<%=(String)request.getAttribute("themeDirectory")%>/library/js/jquery.scrollTo-min.js"></script>
-	<script src="<%=(String)request.getAttribute("themeDirectory")%>/library/js/jquery.lightbox.js"></script>
-	<script src="<%=(String)request.getAttribute("themeDirectory")%>/library/js/plugins/validate/jquery.validate.js"></script>
-	<script src="<%=(String)request.getAttribute("themeDirectory")%>/library/js/plugins/validate/additional-methods.js"></script>
+</div>
+
+	<script src="library/js/jquery.min.js"></script>
+	<script src="library/js/modernizr.js"></script>
+	<script src="library/js/bootstrap.js"></script>
+ 	<script src="library/js/bootstrap-transition.js"></script>
+    <!-- <script src="library/js/bootstrap-alert.js"></script> -->
+    <!-- <script src="library/js/bootstrap-modal.js"></script> -->
+    <!-- <script src="library/js/bootstrap-dropdown.js"></script> -->
+    <script src="library/js/bootstrap-tooltip.js"></script>
+    <script src="library/js/bootstrap-popover.js"></script>
+    <script src="library/js/bootstrap-button.js"></script>
+    <script src="library/js/bootstrap-collapse.js"></script>
+    <!-- <script src="library/js/bootstrap-carousel.js"></script> -->
+	<script src="library/js/bootstrap-tab.js"></script>
+    <script src="library/js/jquery.scrollTo-min.js"></script>
+	<script src="library/js/jquery.lightbox.js"></script>
+	<script src="library/js/plugins/validate/jquery.validate.js"></script>
+	<script src="library/js/plugins/validate/additional-methods.js"></script>
 
     <script>
 
@@ -986,48 +972,29 @@
 		    } */
 		
 		// accordion (faq)
-		$('.accordion').on('show', function (e) {
-	         $(e.target).prev('.accordion-heading').parent ().addClass('open');
-	    });
+		// $('.accordion').on('show', function (e) {
+	  //        $(e.target).prev('.accordion-heading').parent ().addClass('open');
+	  //   });
 
-	    $('.accordion').on('hide', function (e) {
-	        $(this).find('.accordion-toggle').not($(e.target)).parents ('.accordion-group').removeClass('open');
-	    });
+	  //   $('.accordion').on('hide', function (e) {
+	  //       $(this).find('.accordion-toggle').not($(e.target)).parents ('.accordion-group').removeClass('open');
+	  //   });
 
-	    $('.accordion').each (function () {	    	
-	    	$(this).find ('.accordion-body.in').parent ().addClass ('open');
-	    });
+	  //   $('.accordion').each (function () {	    	
+	  //   	$(this).find ('.accordion-body.in').parent ().addClass ('open');
+	  //   });
 
 
 		// section sizing
 		$(".section").css("min-height",$(window).height() - 100);
 		
-		// $("#testimonials").css("min-height",325);
-		$("#contact").css("min-height",350);
-		
-		$('#contactFrm').validate();
-		
-		$("#contactFrm").submit(function(){			
-			
-			// if valid
-			if ( $('#contactFrm').valid() ) {
-			
-				$.post(
-					"cntl/contact_us.jsp",
-					"name=" + $("#name").val() + "&message=" + $("#message").val() + "&email=" + $("#email").val(),
-					function(){
-						$("#contactSuccess").show(250);
-						$("#message,#email,#name").val("");
-					}
-				);
-				return false;
-			}
-		});
+		// // $("#testimonials").css("min-height",325);
+		// $("#contact").css("min-height",350);
 		
 		
 		$(".screenshot").each(function(i,element){
 			var _element = $(element);
-			// $(element).css("background","url(<%=(String)request.getAttribute("themeDirectory")%>/library/tour/" + _element.attr("id") + ".png)")
+			// $(element).css("background","url(library/tour/" + _element.attr("id") + ".png)")
 			// .css("background-repeat","no-repeat");
 			_element.find("button").each(function(j,button){
 				var _button = $(button);
@@ -1073,7 +1040,6 @@
 		// $("#screenie").show();
 		
     </script>
-	
 
 </body>
 </html>
