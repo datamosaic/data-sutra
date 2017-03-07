@@ -2,13 +2,12 @@
     "title": "Data Sutra",
     "Description": "Data Sutra developer documentation",
     "root": "./",
-    "plugins": [ "-sharing", "versions", "todo", "github", "prism", "-highlight", "custom-favicon", "youtube", "simple-page-toc",
+    "plugins": [ "-sharing", "versions", "todo", "github", "prism", "-highlight","youtube", "simple-page-toc",
           "theme-vuejs@git+https://github.com/pearofducks/gitbook-plugin-theme-vuejs.git", "-fontsettings" ],
     "pluginsConfig": {
         "github": {
             "url": "https://github.com/datamosaic/data-sutra"
         },
-        "favicon": "/favicon.ico",
         "simple-page-toc": {
             "maxDepth": 4,
             "skipFirstH1": true
