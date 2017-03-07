@@ -10,8 +10,12 @@ cp -rf doc_src/documentation ../docs
 
 
 # website
+rm -rf ../docs/index.html
+cp -rf index.html ../docs/index.html
 
-
+rm -rf ../docs/library
+cp -rf library ../docs/library
+cp -rf favicon.ico ../docs/favicon.ico
 
 # git
 git add -A
