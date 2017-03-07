@@ -1,6 +1,7 @@
 # TODOs
 
-- [ ] debug `Versions` plugin links issue
+- [ ] favicon.ico working
+- [x] debug `Versions` plugin links issue
 
 ## v6 Archive
 
