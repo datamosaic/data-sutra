@@ -4,7 +4,11 @@
   "description": "Archive of original website",
   "main": "index.html",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "rm -rf doc_src/documentation && npm run build:6 && npm run build:8",
+    "build:6": "gitbook build doc_src/servoy-06 doc_src/documentation/servoy-06",
+    "build:8": "gitbook build doc_src/servoy-08 doc_src/documentation/servoy-08",
+    "serve": "http-server doc_src/documentation",
+    "deploy": "npm run build && .bin/deploy.sh"
   },
   "author": "Kabootit",
   "license": "ISC"
