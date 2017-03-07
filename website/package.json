@@ -1,0 +1,11 @@
+{
+  "name": "data-sutra-website",
+  "version": "1.0.0",
+  "description": "Archive of original website",
+  "main": "index.html",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Kabootit",
+  "license": "ISC"
+}
