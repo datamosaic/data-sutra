@@ -260,7 +260,7 @@ Somewhere in between the addon module and method override techniques is
 the extending forms technique. This approach allows you to customize
 user interfaces and override functionality on a form-by-form basis.
 
-> Note: future self is no longer a fan of extending forms. It introduces tight-coupling which is almost always not a good idea. In fact, the example given here were the only time we used extended forms and it turned out to be hard to debug and changing code was a fearful process. Typical of tight coupling.
+> Note: future self is no longer a fan of extending forms. It introduces tight-coupling which is almost always not a good idea. In fact, the example given here was the only time we used extended forms and it turned out to be hard to debug and changing code was a fearful process. Always pick composition over inheritance!.
 
 
 ##### Basics
