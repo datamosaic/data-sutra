@@ -1,6 +1,6 @@
 # TODOs
 
-- [ ] update main readme
+- [x] update main readme
 
 
 ## v8 Migration
