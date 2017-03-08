@@ -1,11 +1,10 @@
 # Data Sutra
 
-This is a converted SVN repo representing last production release circa 2013 for Servoy 6.1.6.
+![](https://img.shields.io/badge/Servoy-v6.1.6-orange.svg)
 
-Check out the Servoy-8-dev branch for Servoy 8 conversion effort (2017).
+An application platform for Servoy.
 
-### Links
 
-- [Website (original)](#)
-- [Documentation](#)
-- [Download Servoy 6.1.6 release](#)
+- [Website](http://data-sutra.com/)
+- [Documentation](http://data-sutra.com/documentation/servoy-06/)
+- [Download Servoy 6.1.6 release](https://github.com/datamosaic/data-sutra/releases/tag/4.0.2)
